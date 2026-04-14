@@ -3,7 +3,7 @@ import type { IEvent, EventStatus} from "../model/Event";
 import type {IRSVP, RSVPStatus} from "../model/RSVP";
 import type { EventError, RSVPError } from "../service/errors";
 
-export type CreateEventInput = {
+export type EventInput = {
     title: string;
     description: string;
     location: string;
@@ -23,13 +23,14 @@ export type EventFilterStatus = "all" | EventStatus;
 export type RSVPFilterStatus = "all" | RSVPStatus;
 
 export interface IEventRepository {
-    createEvent(data: CreateEventInput): Promise<Result<IEvent, EventError>>;
+    createEvent(data: EventInput): Promise<Result<IEvent, EventError>>;
     getEventById(id: number): Promise<Result<IEvent, EventError>>;
-    getEventsByOrganizer(organizerId: string): Promise<Result<IEvent[], EventError>>;
-    getAllEvents(): Promise<Result<IEvent[], EventError>>;
-    getAllArchived(): Promise<Result<IEvent[], EventError>>;
-    deleteEvent(id: number): Promise<Result<void, EventError>>;
-    listEvents(filterStatus?: EventFilterStatus): Promise<Result<IEvent[], EventError>>;
+    // getEventsByOrganizer(organizerId: string): Promise<Result<IEvent[], EventError>>;
+    // getAllEvents(): Promise<Result<IEvent[], EventError>>;
+    // getAllArchived(): Promise<Result<IEvent[], EventError>>;
+    // deleteEvent(id: number): Promise<Result<void, EventError>>;
+    // listEvents(filterStatus?: EventFilterStatus): Promise<Result<IEvent[], EventError>>;
+    updateEvent(id: number, data: EventInput): Promise<Result<void, EventError>>;
 }
 
 export interface IRSVPRepository {
