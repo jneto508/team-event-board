@@ -16,6 +16,5 @@ export const Ok = <T>(value: T): Ok<T> => ({
 });
 
 export const Err = <E>(value: E): Err<E> => ({
-  ok: false,
-  value,
+  ok: false, value,
 });
