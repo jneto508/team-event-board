@@ -3,6 +3,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
+import { IMemberRsvpsDashboardController } from "./rsvps/MemberRsvpsDashboardController";
 import {
   AuthenticationRequired,
   AuthorizationRequired,
@@ -35,6 +36,7 @@ class ExpressApp implements IApp {
 
   constructor(
     private readonly authController: IAuthController,
+    private readonly memberRsvpsDashboardController: IMemberRsvpsDashboardController,
     private readonly logger: ILoggingService,
   ) {
     this.app = express();
@@ -253,6 +255,62 @@ class ExpressApp implements IApp {
       }),
     );
 
+    this.app.get(
+      "/my-rsvps",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["user"], "Only members can view My RSVPs.")) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        this.logger.info(`GET /my-rsvps for ${currentUser.email}`);
+        await this.memberRsvpsDashboardController.showDashboard(
+          res,
+          currentUser.userId,
+          browserSession,
+        );
+      }),
+    );
+
+    this.app.post(
+      "/my-rsvps/:eventId/cancel",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["user"], "Only members can manage My RSVPs.")) {
+          return;
+        }
+
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        const eventId = Number.parseInt(
+          typeof req.params.eventId === "string" ? req.params.eventId : "",
+          10,
+        );
+
+        await this.memberRsvpsDashboardController.cancelRsvp(
+          res,
+          currentUser.userId,
+          eventId,
+          touchAppSession(sessionStore(req)),
+        );
+      }),
+    );
+
     // ── Error handler ────────────────────────────────────────────────
 
     this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
@@ -272,7 +330,8 @@ class ExpressApp implements IApp {
 
 export function CreateApp(
   authController: IAuthController,
+  memberRsvpsDashboardController: IMemberRsvpsDashboardController,
   logger: ILoggingService,
 ): IApp {
-  return new ExpressApp(authController, logger);
+  return new ExpressApp(authController, memberRsvpsDashboardController, logger);
 }
