@@ -24,7 +24,7 @@ export interface CreateEventData {
   capacity?: number;
   startDateTime: Date;
   endDateTime: Date;
-  organizerId: number;
+  organizerId: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -82,7 +82,7 @@ export class Event implements IEvent {
         this.capacity = data.capacity ?? 0;
         this.startDateTime = data.startDateTime;
         this.endDateTime = data.endDateTime;
-        this.organizerId = data.organizerId.toString();
+        this.organizerId = data.organizerId;
         this.createdAt = data.createdAt ?? new Date();
         this.updatedAt = data.updatedAt ?? new Date();
     }
