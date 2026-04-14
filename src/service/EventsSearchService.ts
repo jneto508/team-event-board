@@ -30,7 +30,7 @@ export class EventService {
       return Ok(publishedUpcoming);
     }
 
-    const filtered = publishedUpcoming.filter(event => {
+    const filter = publishedUpcoming.filter(event => {
       return (
         event.title.toLowerCase().includes(q) ||
         event.description.toLowerCase().includes(q) ||
@@ -38,6 +38,6 @@ export class EventService {
       );
     });
 
-    return Ok(filtered);
+    return Ok(filter);
   }
 }
