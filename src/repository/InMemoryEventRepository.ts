@@ -69,7 +69,7 @@ class InMemoryEventRepository implements IEventRepository {
 }
 
 
-export function CreateInMemoryUserRepository(): IEventRepository {
+export function CreateInMemoryEventRepository(): IEventRepository {
   // We keep users in memory in this lecture so students can focus on auth, authorization,
   // and hashing before adding a persistent user store.
   return new InMemoryEventRepository();
