@@ -1,54 +1,43 @@
 import { Err, Ok, Result } from "../lib/result";
-import { createEvent, updateEvent } from "../model/Event";
-import type { IEvent } from "../model/Event";
-import {
-    EventNotFound,
-    UnexpectedDependencyError,
-    EventError,
-} from "../service/errors";
-import type { EventInput, IEventRepository } from "./EventRepository";
+import { UnexpectedDependencyError } from "../service/errors";
+import { EventFilterStatus, type IEventRepository } from "./EventRepository";
+import { IEvent } from "../model/Event";
+import { type CreateEventInput } from "./EventRepository";
+import { type EventError } from "../service/errors";
 
 class InMemoryEventRepository implements IEventRepository {
-    private events: IEvent[] = [];
-    private nextId = 1;
+  private events: IEvent[] = [];
+  private nextEventId = 1;
 
-    async createEvent(data: EventInput): Promise<Result<IEvent, EventError>> {
-        try {
-            const event = createEvent(this.nextId++, {
-                title: data.title,
-                description: data.description,
-                location: data.location,
-                category: data.category,
-                capacity: data.capacity,
-                startDateTime: data.startDateTime,
-                endDateTime: data.endDateTime,
-                organizerId: parseInt(data.organizerId, 10) || 0,
-            });
-            this.events.push(event);
-            return Ok(event);
-        } catch {
-            return Err(UnexpectedDependencyError("Unable to create event."));
-        }
-    }
-
-    async getEventById(id: number): Promise<Result<IEvent, EventError>> {
-        try {
-            const event = this.events.find((e) => e.id === id) ?? null;
-            if (!event) return Err(EventNotFound("Event not found."));
-            return Ok(event);
-        } catch {
-            return Err(UnexpectedDependencyError("Unable to read event."));
-        }
-    }
-
-    async updateEvent(id: number, data: EventInput): Promise<Result<void, EventError>> {
-        try {
-            const event = this.events.find((e) => e.id === id) ?? null;
-            if (!event) return Err(EventNotFound("Event not found."));
-            updateEvent(event, data);  // mutates event in-place, sets updatedAt
-            return Ok(undefined);
-        } catch {
-            return Err(UnexpectedDependencyError("Unable to update event."));
-        }
-    }
+  async createEvent(data: CreateEventInput): Promise<Result<IEvent, EventError>> {
+      try {
+          const now = new Date();
+          const event: IEvent = {
+              id: this.nextEventId++,
+              title: data.title.trim(),
+              description: data.description.trim(),
+              location: data.location.trim(),
+              category: (data.category || "general").trim().toLowerCase() || "general",
+              status: "draft",
+              capacity: data.capacity ?? 0,
+              startDateTime: data.startDateTime,
+              endDateTime: data.endDateTime,
+              organizerId: data.organizerId,
+              createdAt: now,
+              updatedAt: now,
+          };
+          this.events.push(event);
+          return Ok(event);
+      } catch {
+          return Err(UnexpectedDependencyError("Failed to create event."));
+      }
   }
+
+  // Teammates implement:
+  async getEventById(_id: number): Promise<Result<IEvent, EventError>> { throw new Error("Not implemented"); }
+  async getEventsByOrganizer(_organizerId: string): Promise<Result<IEvent[], EventError>> { throw new Error("Not implemented"); }
+  async getAllEvents(): Promise<Result<IEvent[], EventError>> { throw new Error("Not implemented"); }
+  async getAllArchived(): Promise<Result<IEvent[], EventError>> { throw new Error("Not implemented"); }
+  async deleteEvent(_id: number): Promise<Result<void, EventError>> { throw new Error("Not implemented"); }
+  async listEvents(_filterStatus?: EventFilterStatus): Promise<Result<IEvent[], EventError>> { throw new Error("Not implemented"); }
+}
