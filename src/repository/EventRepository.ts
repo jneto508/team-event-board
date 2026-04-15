@@ -25,12 +25,15 @@ export type RSVPFilterStatus = "all" | RSVPStatus;
 export interface IEventRepository {
     createEvent(data: EventInput): Promise<Result<IEvent, EventError>>;
     getEventById(id: number): Promise<Result<IEvent, EventError>>;
-    // getEventsByOrganizer(organizerId: string): Promise<Result<IEvent[], EventError>>;
-    // getAllEvents(): Promise<Result<IEvent[], EventError>>;
-    // getAllArchived(): Promise<Result<IEvent[], EventError>>;
-    // deleteEvent(id: number): Promise<Result<void, EventError>>;
-    // listEvents(filterStatus?: EventFilterStatus): Promise<Result<IEvent[], EventError>>;
-    updateEvent(id: number, data: EventInput): Promise<Result<void, EventError>>;
+    getEventsByOrganizer(organizerId: string): Promise<Result<IEvent[], EventError>>;
+    getAllEvents(): Promise<Result<IEvent[], EventError>>;
+    getAllArchived(): Promise<Result<IEvent[], EventError>>;
+    deleteEvent(id: number): Promise<Result<void, EventError>>;
+    updateEvent(
+        id: number,
+        data: CreateEventInput,
+    ): Promise<Result<void, EventError>>;
+    listEvents(filterStatus?: EventFilterStatus): Promise<Result<IEvent[], EventError>>;
 }
 
 export interface IRSVPRepository {
