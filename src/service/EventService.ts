@@ -16,27 +16,27 @@ export interface IEventService {
     ): Promise<Result<void, EventError>>;
 }
 
-function validateEventInput(data: CreateEventInput): void {
+function validateEventInput(data: CreateEventInput): EventError | null {
     if (!data.title || data.title.trim() === "") {
-        throw InvalidEventData("Title is required.");
+        return InvalidEventData("Title is required.");
     }
     if (!data.description || data.description.trim() === "") {
-        throw InvalidEventData("Description is required.");
+        return InvalidEventData("Description is required.");
     }
     if (!data.location || data.location.trim() === "") {
-        throw InvalidEventData("Location is required.");
+        return InvalidEventData("Location is required.");
     }
     if (!data.category || data.category.trim() === "") {
-        throw InvalidEventData("Category is required.");
+        return InvalidEventData("Category is required.");
     }
     if (!data.organizerId || data.organizerId.trim() === "") {
-        throw InvalidEventData("Organizer ID is required.");
+        return InvalidEventData("Organizer ID is required.");
     }
     if (
         !(data.startDateTime instanceof Date) ||
         isNaN(data.startDateTime.getTime())
     ) {
-        throw InvalidEventData(
+        return InvalidEventData(
             "Start date/time is required and must be a valid date.",
         );
     }
@@ -44,16 +44,17 @@ function validateEventInput(data: CreateEventInput): void {
         !(data.endDateTime instanceof Date) ||
         isNaN(data.endDateTime.getTime())
     ) {
-        throw InvalidEventData(
+        return InvalidEventData(
             "End date/time is required and must be a valid date.",
         );
     }
     if (data.startDateTime >= data.endDateTime) {
-        throw InvalidEventData("Start date/time must be before end date/time.");
+        return InvalidEventData("Start date/time must be before end date/time.");
     }
     if (data.capacity !== undefined && data.capacity < 0) {
-        throw InvalidEventData("Capacity must be a non-negative number.");
+        return InvalidEventData("Capacity must be a non-negative number.");
     }
+    return null;
 }
 
 export class EventService implements IEventService {
@@ -62,11 +63,8 @@ export class EventService implements IEventService {
     async createEvent(
         data: CreateEventInput,
     ): Promise<Result<IEvent, EventError>> {
-        try {
-            validateEventInput(data);
-        } catch (e) {
-            return Err(e as EventError);
-        }
+        const error = validateEventInput(data);
+        if (error) return Err(error);
         return this.repository.createEvent(data);
     }
 
@@ -90,11 +88,8 @@ export class EventService implements IEventService {
         id: number,
         data: CreateEventInput,
     ): Promise<Result<void, EventError>> {
-        try {
-            validateEventInput(data);
-        } catch (e) {
-            return Err(e as EventError);
-        }
+        const error = validateEventInput(data);
+        if (error) return Err(error);
         const found = await this.repository.getEventById(id);
         if (!found.ok) {
             return Err(EventNotFound(`Event with id ${id} not found.`));
