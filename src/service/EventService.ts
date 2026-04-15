@@ -1,7 +1,10 @@
 import { Ok, Err, Result } from "../lib/result";
 import { IEvent } from "../model/Event";
 import { EventError, InvalidEventData, EventNotFound } from "../service/errors";
-import { CreateEventInput, IEventRepository } from "../repository/EventRepository";
+import {
+    CreateEventInput,
+    IEventRepository,
+} from "../repository/EventRepository";
 
 export interface IEventService {
     createEvent(data: CreateEventInput): Promise<Result<IEvent, EventError>>;
@@ -29,11 +32,21 @@ function validateEventInput(data: CreateEventInput): void {
     if (!data.organizerId || data.organizerId.trim() === "") {
         throw InvalidEventData("Organizer ID is required.");
     }
-    if (!(data.startDateTime instanceof Date) || isNaN(data.startDateTime.getTime())) {
-        throw InvalidEventData("Start date/time is required and must be a valid date.");
+    if (
+        !(data.startDateTime instanceof Date) ||
+        isNaN(data.startDateTime.getTime())
+    ) {
+        throw InvalidEventData(
+            "Start date/time is required and must be a valid date.",
+        );
     }
-    if (!(data.endDateTime instanceof Date) || isNaN(data.endDateTime.getTime())) {
-        throw InvalidEventData("End date/time is required and must be a valid date.");
+    if (
+        !(data.endDateTime instanceof Date) ||
+        isNaN(data.endDateTime.getTime())
+    ) {
+        throw InvalidEventData(
+            "End date/time is required and must be a valid date.",
+        );
     }
     if (data.startDateTime >= data.endDateTime) {
         throw InvalidEventData("Start date/time must be before end date/time.");
@@ -46,7 +59,9 @@ function validateEventInput(data: CreateEventInput): void {
 export class EventService implements IEventService {
     constructor(private readonly repository: IEventRepository) {}
 
-    async createEvent(data: CreateEventInput): Promise<Result<IEvent, EventError>> {
+    async createEvent(
+        data: CreateEventInput,
+    ): Promise<Result<IEvent, EventError>> {
         try {
             validateEventInput(data);
         } catch (e) {
@@ -71,7 +86,10 @@ export class EventService implements IEventService {
         return this.repository.deleteEvent(id);
     }
 
-    async updateEvent(id: number, data: CreateEventInput): Promise<Result<void, EventError>> {
+    async updateEvent(
+        id: number,
+        data: CreateEventInput,
+    ): Promise<Result<void, EventError>> {
         try {
             validateEventInput(data);
         } catch (e) {
@@ -83,4 +101,8 @@ export class EventService implements IEventService {
         }
         return this.repository.updateEvent(id, data);
     }
+}
+
+export function CreateEventService(eventRepository: IEventRepository) {
+    return new EventService(eventRepository);
 }
