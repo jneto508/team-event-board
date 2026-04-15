@@ -12,19 +12,27 @@ import { CreateEventService } from "./service/EventService";
 import { CreateEventController } from "./controller/EventController";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
-  const resolvedLogger = logger ?? CreateLoggingService();
+    const resolvedLogger = logger ?? CreateLoggingService();
 
-  // Authentication & authorization wiring
-  const authUsers = CreateInMemoryUserRepository();
-  const passwordHasher = CreatePasswordHasher();
-  const authService = CreateAuthService(authUsers, passwordHasher);
-  const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
-  const authController = CreateAuthController(authService, adminUserService, resolvedLogger);
+    // Authentication & authorization wiring
+    const authUsers = CreateInMemoryUserRepository();
+    const passwordHasher = CreatePasswordHasher();
+    const authService = CreateAuthService(authUsers, passwordHasher);
+    const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
+    const authController = CreateAuthController(
+        authService,
+        adminUserService,
+        resolvedLogger,
+    );
 
-  // Event wiring
-  const eventRepository = CreateInMemoryEventRepository();
-  const eventService = CreateEventService(eventRepository);
-  const eventController = CreateEventController(eventService);
+    // Event wiring
+    const eventRepository = CreateInMemoryEventRepository();
+    const eventService = CreateEventService(eventRepository);
+    const eventController = CreateEventController(eventService, resolvedLogger);
 
-  return CreateApp(authController, resolvedLogger, eventController);
+    return CreateApp(
+        authController,
+        resolvedLogger,
+        eventController,
+    );
 }

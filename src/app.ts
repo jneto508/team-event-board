@@ -324,7 +324,10 @@ class ExpressApp implements IApp {
                 this.logger.info(
                     `GET /events/new for ${browserSession.browserLabel}`,
                 );
-                await this.eventController.showNewEventForm(res, browserSession);
+                await this.eventController.showNewEventForm(
+                    res,
+                    browserSession,
+                );
             }),
         );
 
