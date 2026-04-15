@@ -3,7 +3,7 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
-import { IEventService } from "./service/EventService";
+import { IEventController } from "./controller/EventController";
 import { AuthenticationRequired, AuthorizationRequired } from "./auth/errors";
 import type { UserRole } from "./auth/User";
 import { IApp } from "./contracts";
@@ -38,7 +38,7 @@ class ExpressApp implements IApp {
     constructor(
         private readonly authController: IAuthController,
         private readonly logger: ILoggingService,
-        private readonly eventService: IEventService,
+        private readonly eventController: IEventController,
     ) {
         this.app = express();
         this.registerMiddleware();
@@ -324,19 +324,55 @@ class ExpressApp implements IApp {
                 this.logger.info(
                     `GET /events/new for ${browserSession.browserLabel}`,
                 );
-                res.render("events/new", {
-                    session: browserSession,
-                    pageError: null,
-                    formValues: {
-                        title: "",
-                        description: "",
-                        location: "",
-                        category: "",
-                        capacity: "",
-                        startDateTime: "",
-                        endDateTime: "",
+                await this.eventController.showNewEventForm(res, browserSession);
+            }),
+        );
+
+        this.app.post(
+            "/events",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                const store = sessionStore(req);
+                const organizerId = getAuthenticatedUser(store)!.userId;
+
+                await this.eventController.createEventFromForm(
+                    res,
+                    {
+                        title:
+                            typeof req.body.title === "string"
+                                ? req.body.title.trim()
+                                : "",
+                        description:
+                            typeof req.body.description === "string"
+                                ? req.body.description.trim()
+                                : "",
+                        location:
+                            typeof req.body.location === "string"
+                                ? req.body.location.trim()
+                                : "",
+                        category:
+                            typeof req.body.category === "string"
+                                ? req.body.category.trim()
+                                : "",
+                        capacity:
+                            typeof req.body.capacity === "string"
+                                ? req.body.capacity.trim()
+                                : "",
+                        startDateTime:
+                            typeof req.body.startDateTime === "string"
+                                ? req.body.startDateTime
+                                : "",
+                        endDateTime:
+                            typeof req.body.endDateTime === "string"
+                                ? req.body.endDateTime
+                                : "",
                     },
-                });
+                    organizerId,
+                    touchAppSession(store),
+                );
             }),
         );
 
@@ -370,7 +406,7 @@ class ExpressApp implements IApp {
 export function CreateApp(
     authController: IAuthController,
     logger: ILoggingService,
-    eventService: IEventService,
+    eventController: IEventController,
 ): IApp {
-    return new ExpressApp(authController, logger, eventService);
+    return new ExpressApp(authController, logger, eventController);
 }
