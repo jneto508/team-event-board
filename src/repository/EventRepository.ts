@@ -29,6 +29,10 @@ export interface IEventRepository {
     getAllEvents(): Promise<Result<IEvent[], EventError>>;
     getAllArchived(): Promise<Result<IEvent[], EventError>>;
     deleteEvent(id: number): Promise<Result<void, EventError>>;
+    updateEvent(
+        id: number,
+        data: CreateEventInput,
+    ): Promise<Result<void, EventError>>;
     listEvents(filterStatus?: EventFilterStatus): Promise<Result<IEvent[], EventError>>;
 }
 
