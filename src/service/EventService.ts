@@ -9,6 +9,7 @@ import {
 export interface IEventService {
     createEvent(data: CreateEventInput): Promise<Result<IEvent, EventError>>;
     getEventById(id: number): Promise<Result<IEvent, EventError>>;
+    searchEvents(query: string): Promise<Result<IEvent[], EventError>>;
     deleteEvent(id: number): Promise<Result<void, EventError>>;
     updateEvent(
         id: number,
@@ -96,6 +97,40 @@ export class EventService implements IEventService {
         }
         return this.repository.updateEvent(id, data);
     }
+    
+    async searchEvents(query: string): Promise<Result<IEvent[], EventError>> {
+        const result = await this.repository.getAllEvents();
+    
+        if (!result.ok) {
+          return Err(result.value);
+        }
+    
+        const events = result.value;
+        const now = new Date();
+    
+        const q = (query || "").toLowerCase().trim();
+    
+        const publishedUpcoming = events.filter(event => {
+          return (
+            event.status === "published" &&
+            event.startDateTime > now
+          );
+        });
+    
+        if (q === "") {
+          return Ok(publishedUpcoming);
+        }
+    
+        const filtered = publishedUpcoming.filter(event => {
+          return (
+            event.title.toLowerCase().includes(q) ||
+            event.description.toLowerCase().includes(q) ||
+            event.location.toLowerCase().includes(q)
+          );
+        });
+    
+        return Ok(filtered);
+      }
 }
 
 export function CreateEventService(eventRepository: IEventRepository) {
