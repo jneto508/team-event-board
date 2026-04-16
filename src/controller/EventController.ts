@@ -8,7 +8,6 @@ import type { IRSVPService } from "../service/RSVPService";
 import type { EventError } from "../service/errors";
 import type { ILoggingService } from "../service/LoggingService";
 import type { SavedEventService } from "../service/SavedEventService";
-import { ILoggingService } from "../service/LoggingService";
 import type { UserRole } from "../auth/User";
 
 export interface IEventController {
@@ -33,6 +32,7 @@ export interface IEventController {
     res: Response,
     userId: string,
     session: IAppBrowserSession
+  ): Promise<void>;
   showEditEventForm(
     res: Response,
     eventId: number,
@@ -314,12 +314,8 @@ class EventController implements IEventController {
 export function CreateEventController(
   eventService: IEventService,
   savedEventService: SavedEventService,
-  logger: ILoggingService,
-): IEventController {
-  return new EventController(eventService, savedEventService, logger);
-}
   rsvpService: IRSVPService,
   logger: ILoggingService,
 ): IEventController {
-  return new EventController(eventService, rsvpService, logger);
+  return new EventController(eventService, savedEventService, rsvpService, logger);
 }
