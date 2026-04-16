@@ -45,6 +45,11 @@ class InMemoryEventRepository implements IEventRepository {
     }
 
     async getEventById(id: number): Promise<Result<IEvent, EventError>> {
+        const event = this.events.find(e => e.id === id);
+        if (!event) {
+            return Err(UnexpectedDependencyError(`Event with id ${id} not found.`));
+        }
+        return Ok(event);
         try {
             const event = this.findEvent(id);
             if (!event) {
@@ -76,6 +81,19 @@ class InMemoryEventRepository implements IEventRepository {
         id: number,
         data: CreateEventInput,
     ): Promise<Result<void, EventError>> {
+        const event = this.events.find(e => e.id === id);
+        if (!event) {
+            return Err(UnexpectedDependencyError(`Event with id ${id} not found.`));
+        }
+        event.title = data.title.trim();
+        event.description = data.description.trim();
+        event.location = data.location.trim();
+        event.category = (data.category || "general").trim().toLowerCase() || "general";
+        event.capacity = data.capacity ?? 0;
+        event.startDateTime = data.startDateTime;
+        event.endDateTime = data.endDateTime;
+        event.updatedAt = new Date();
+        return Ok(undefined);
         try {
             const event = this.findEvent(id);
             if (!event) {
