@@ -1,6 +1,11 @@
 import { Ok, Err, Result } from "../lib/result";
 import { IEvent } from "../model/Event";
-import { EventError, InvalidEventData, EventNotFound, Forbidden } from "../service/errors";
+import {
+    EventError,
+    InvalidEventData,
+    EventNotFound,
+    Forbidden,
+} from "../service/errors";
 import {
     CreateEventInput,
     IEventRepository,
@@ -9,7 +14,10 @@ import { UserRole } from "../auth/User";
 
 export interface IEventService {
     createEvent(data: CreateEventInput): Promise<Result<IEvent, EventError>>;
-    getEventById(id: number): Promise<Result<IEvent, EventError>>;
+    getEventById(
+        id: number,
+        actor: { userId: string; role: UserRole },
+    ): Promise<Result<IEvent, EventError>>;
     searchEvents(query: string): Promise<Result<IEvent[], EventError>>;
     getArchivedEvents(category?: string): Promise<Result<IEvent[], EventError>>;
     archiveExpiredEvents(now?: Date): Promise<Result<number, EventError>>;
@@ -112,7 +120,10 @@ export class EventService implements IEventService {
         return this.repository.createEvent(data);
     }
 
-    async getEventById(id: number): Promise<Result<IEvent, EventError>> {
+    async getEventById(
+        id: number,
+        actor: { userId: string; role: UserRole },
+    ): Promise<Result<IEvent, EventError>> {
         const archiveResult = await this.archiveExpiredEvents();
         if (archiveResult.ok === false) {
             return Err(archiveResult.value);
@@ -122,7 +133,17 @@ export class EventService implements IEventService {
         if (!result.ok) {
             return Err(EventNotFound(`Event with id ${id} not found.`));
         }
-        return Ok(result.value);
+
+        const event = result.value;
+        if (event.status === "draft") {
+            const isOrganizer = actor.userId === event.organizerId;
+            const isAdmin = actor.role === "admin";
+            if (!isOrganizer && !isAdmin) {
+                return Err(EventNotFound(`Event with id ${id} not found.`));
+            }
+        }
+
+        return Ok(event);
     }
 
     async deleteEvent(id: number): Promise<Result<void, EventError>> {
@@ -166,48 +187,39 @@ export class EventService implements IEventService {
 
         return this.repository.updateEvent(id, data);
     }
-    
+
     async searchEvents(query: string): Promise<Result<IEvent[], EventError>> {
-        const result = await this.repository.getAllEvents();
-    
-        if (!result.ok) {
         const archiveResult = await this.archiveExpiredEvents();
         if (archiveResult.ok === false) {
             return Err(archiveResult.value);
         }
 
         const result = await this.repository.getAllEvents();
-    
         if (result.ok === false) {
-          return Err(result.value);
+            return Err(result.value);
         }
-    
+
         const events = result.value;
         const now = new Date();
-    
         const q = (query || "").toLowerCase().trim();
-    
-        const publishedUpcoming = events.filter(event => {
-          return (
-            event.status === "published" &&
-            event.startDateTime > now
-          );
+
+        const publishedUpcoming = events.filter((event) => {
+            return event.status === "published" && event.startDateTime > now;
         });
-    
+
         if (q === "") {
-          return Ok(publishedUpcoming);
+            return Ok(publishedUpcoming);
         }
-    
-        const filtered = publishedUpcoming.filter(event => {
-          return (
-            event.title.toLowerCase().includes(q) ||
-            event.description.toLowerCase().includes(q) ||
-            event.location.toLowerCase().includes(q)
-          );
+
+        const filtered = publishedUpcoming.filter((event) => {
+            return (
+                event.title.toLowerCase().includes(q) ||
+                event.description.toLowerCase().includes(q) ||
+                event.location.toLowerCase().includes(q)
+            );
         });
-    
+
         return Ok(filtered);
-      }
     }
 
     async getArchivedEvents(
