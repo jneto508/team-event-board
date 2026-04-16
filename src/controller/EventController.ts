@@ -24,6 +24,11 @@ export interface IEventController {
     organizerId: string,
     session: IAppBrowserSession,
   ): Promise<void>;
+  showArchivePage(
+    res: Response,
+    session: IAppBrowserSession,
+    category?: string,
+  ): Promise<void>;
   toggleRSVP(
     res: Response,
     eventId: number,
@@ -117,6 +122,38 @@ class EventController implements IEventController {
     }
     
     res.redirect("/home");
+  }
+ 
+  async showArchivePage(
+    res: Response,
+    session: IAppBrowserSession,
+    category?: string,
+  ): Promise<void> {
+    this.logger.info("Showing archived events page");
+
+    const result = await this.eventService.getArchivedEvents(category);
+
+    if (!result.ok) {
+      const error = result.value;
+      const status = this.mapErrorStatus(error);
+      res.status(status).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    const categories = Array.from(
+      new Set(result.value.map((event) => event.category)),
+    ).sort();
+
+    res.render("events/archive", {
+      session,
+      pageError: null,
+      events: result.value,
+      categories,
+      selectedCategory: String(category ?? "").trim().toLowerCase(),
+    });
   }
 
   async toggleRSVP(
