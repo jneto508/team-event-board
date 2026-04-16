@@ -6,6 +6,8 @@ import type {
 import type { IEventService } from "../service/EventService";
 import type { IRSVPService } from "../service/RSVPService";
 import type { EventError } from "../service/errors";
+import type { ILoggingService } from "../service/LoggingService";
+import type { SavedEventService } from "../service/SavedEventService";
 import { ILoggingService } from "../service/LoggingService";
 import type { UserRole } from "../auth/User";
 
@@ -25,6 +27,12 @@ export interface IEventController {
     organizerId: string,
     session: IAppBrowserSession,
   ): Promise<void>;
+  toggleSave(res: Response, eventId: number, userId: string): Promise<void>;
+
+  showSavedEvents(
+    res: Response,
+    userId: string,
+    session: IAppBrowserSession
   showEditEventForm(
     res: Response,
     eventId: number,
@@ -53,6 +61,7 @@ export interface IEventController {
 class EventController implements IEventController {
   constructor(
     private readonly eventService: IEventService,
+    private readonly savedEventService: SavedEventService,
     private readonly rsvpService: IRSVPService,
     private readonly logger: ILoggingService,
   ) {}
@@ -72,6 +81,51 @@ class EventController implements IEventController {
     if (error.name === "InvalidEventData" || error.name === "ValidationError")
       return 400;
     return 500;
+  }
+
+  async toggleSave(
+    res: Response,
+    eventId: number,
+    userId: string
+  ): Promise<void> {
+    this.logger.info("Toggling saved event");
+  
+    const result = await this.savedEventService.toggleSave(userId, eventId);
+  
+    if (!result.ok) {
+      res.status(400).render("partials/error", {
+        message: "Unable to toggle saved event.",
+        layout: false,
+      });
+      return;
+    }
+  
+    res.json({
+      status: result.value,
+    });
+  }
+
+  async showSavedEvents(
+    res: Response,
+    userId: string,
+    session: IAppBrowserSession
+  ): Promise<void> {
+    this.logger.info("Showing saved events");
+  
+    const result = await this.savedEventService.getSavedEvents(userId);
+  
+    if (!result.ok) {
+      res.status(500).render("partials/error", {
+        message: "Unable to load saved events.",
+        layout: false,
+      });
+      return;
+    }
+  
+    res.render("events/saved", {
+      session,
+      events: result.value,
+    });
   }
 
   async showNewEventForm(
@@ -259,6 +313,11 @@ class EventController implements IEventController {
 
 export function CreateEventController(
   eventService: IEventService,
+  savedEventService: SavedEventService,
+  logger: ILoggingService,
+): IEventController {
+  return new EventController(eventService, savedEventService, logger);
+}
   rsvpService: IRSVPService,
   logger: ILoggingService,
 ): IEventController {
