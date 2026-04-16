@@ -379,6 +379,52 @@ class ExpressApp implements IApp {
             }),
         );
 
+        this.app.post(
+            "/events/:eventId/save",
+            asyncHandler(async (req, res) => {
+              if (!this.requireAuthenticated(req, res)) {
+                return;
+              }
+          
+              const eventId = Number(req.params.eventId);
+              const user = getAuthenticatedUser(sessionStore(req));
+          
+              if (!user) {
+                res.status(401).render("partials/error", {
+                  message: "User not authenticated.",
+                  layout: false,
+                });
+                return;
+              }
+          
+              await this.eventController.toggleSave(
+                res,
+                eventId,
+                user.userId
+              );
+            }),
+          );
+
+          this.app.get(
+            "/users/:userId/saved-events",
+            asyncHandler(async (req, res) => {
+              if (!this.requireAuthenticated(req, res)) {
+                return;
+              }
+          
+              const userId =
+                typeof req.params.userId === "string" ? req.params.userId : "";
+          
+              const browserSession = recordPageView(sessionStore(req));
+          
+              await this.eventController.showSavedEvents(
+                res,
+                userId,
+                browserSession
+              );
+            }),
+          );
+
         // ── Error handler ────────────────────────────────────────────────
 
         this.app.use(

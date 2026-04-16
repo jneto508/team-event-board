@@ -37,3 +37,7 @@ export class InMemorySavedEventRepository implements ISavedEventRepository {
     return Ok(eventIds);
   }
 }
+
+export function CreateInMemorySavedEventRepository(): ISavedEventRepository {
+    return new InMemorySavedEventRepository();
+  }
