@@ -381,49 +381,90 @@ class ExpressApp implements IApp {
         );
 
         this.app.get(
-            "/events/archive",
+            "/events/:id/edit",
             asyncHandler(async (req, res) => {
                 if (!this.requireAuthenticated(req, res)) {
                     return;
                 }
 
-                await this.eventController.showArchivePage(
+                const eventId = parseInt(String(req.params.id), 10);
+                if (isNaN(eventId)) {
+                    res.status(400).render("partials/error", {
+                        message: "Invalid event ID.",
+                        layout: false,
+                    });
+                    return;
+                }
+
+                const store = sessionStore(req);
+                const user = getAuthenticatedUser(store)!;
+                const browserSession = recordPageView(store);
+
+                await this.eventController.showEditEventForm(
                     res,
-                    recordPageView(sessionStore(req)),
-                    typeof req.query.category === "string"
-                        ? req.query.category
-                        : undefined,
+                    eventId,
+                    user.userId,
+                    user.role,
+                    browserSession,
                 );
             }),
         );
 
         this.app.post(
-            "/events/:id/rsvp-toggle",
+            "/events/:id",
             asyncHandler(async (req, res) => {
                 if (!this.requireAuthenticated(req, res)) {
                     return;
                 }
 
-                const eventId = Number(req.params.id);
-                if (!Number.isInteger(eventId) || eventId <= 0) {
-                    res.status(400).json({
-                        error: "A valid event id is required.",
+                const eventId = parseInt(String(req.params.id), 10);
+                if (isNaN(eventId)) {
+                    res.status(400).render("partials/error", {
+                        message: "Invalid event ID.",
+                        layout: false,
                     });
                     return;
                 }
 
-                const currentUser = getAuthenticatedUser(sessionStore(req));
-                if (!currentUser) {
-                    res.status(401).json({
-                        error: "Please log in to continue.",
-                    });
-                    return;
-                }
+                const store = sessionStore(req);
+                const user = getAuthenticatedUser(store)!;
 
-                await this.eventController.toggleRSVP(
+                await this.eventController.updateEventFromForm(
                     res,
                     eventId,
-                    currentUser,
+                    {
+                        title:
+                            typeof req.body.title === "string"
+                                ? req.body.title.trim()
+                                : "",
+                        description:
+                            typeof req.body.description === "string"
+                                ? req.body.description.trim()
+                                : "",
+                        location:
+                            typeof req.body.location === "string"
+                                ? req.body.location.trim()
+                                : "",
+                        category:
+                            typeof req.body.category === "string"
+                                ? req.body.category.trim()
+                                : "",
+                        capacity:
+                            typeof req.body.capacity === "string"
+                                ? req.body.capacity.trim()
+                                : "",
+                        startDateTime:
+                            typeof req.body.startDateTime === "string"
+                                ? req.body.startDateTime
+                                : "",
+                        endDateTime:
+                            typeof req.body.endDateTime === "string"
+                                ? req.body.endDateTime
+                                : "",
+                    },
+                    user.userId,
+                    user.role,
+                    touchAppSession(store),
                 );
             }),
         );

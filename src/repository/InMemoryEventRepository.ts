@@ -50,15 +50,6 @@ class InMemoryEventRepository implements IEventRepository {
             return Err(UnexpectedDependencyError(`Event with id ${id} not found.`));
         }
         return Ok(event);
-        try {
-            const event = this.findEvent(id);
-            if (!event) {
-                return Err(EventNotFound(`Event with id ${id} not found.`));
-            }
-            return Ok(event);
-        } catch {
-            return Err(UnexpectedDependencyError("Failed to retrieve event."));
-        }
     }
 
     async getEventsByOrganizer(
@@ -94,27 +85,6 @@ class InMemoryEventRepository implements IEventRepository {
         event.endDateTime = data.endDateTime;
         event.updatedAt = new Date();
         return Ok(undefined);
-        try {
-            const event = this.findEvent(id);
-            if (!event) {
-                return Err(EventNotFound(`Event with id ${id} not found.`));
-            }
-
-            event.title = data.title.trim();
-            event.description = data.description.trim();
-            event.location = data.location.trim();
-            event.category =
-                (data.category || "general").trim().toLowerCase() || "general";
-            event.capacity = data.capacity ?? 0;
-            event.startDateTime = data.startDateTime;
-            event.endDateTime = data.endDateTime;
-            event.organizerId = data.organizerId;
-            event.updatedAt = new Date();
-
-            return Ok(undefined);
-        } catch {
-            return Err(UnexpectedDependencyError("Failed to update event."));
-        }
     }
 
     async updateEventStatus(
