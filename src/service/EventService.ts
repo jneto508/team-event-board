@@ -1,10 +1,11 @@
 import { Ok, Err, Result } from "../lib/result";
 import { IEvent } from "../model/Event";
-import { EventError, InvalidEventData, EventNotFound } from "../service/errors";
+import { EventError, InvalidEventData, EventNotFound, Forbidden } from "../service/errors";
 import {
     CreateEventInput,
     IEventRepository,
 } from "../repository/EventRepository";
+import { UserRole } from "../auth/User";
 
 export interface IEventService {
     createEvent(data: CreateEventInput): Promise<Result<IEvent, EventError>>;
@@ -14,10 +15,12 @@ export interface IEventService {
     updateEvent(
         id: number,
         data: CreateEventInput,
+        actingUserId: string,
+        actingUserRole: UserRole,
     ): Promise<Result<void, EventError>>;
 }
 
-function validateEventInput(data: CreateEventInput): EventError | null {
+function validateEventFields(data: CreateEventInput): EventError | null {
     if (!data.title || data.title.trim() === "") {
         return InvalidEventData("Title is required.");
     }
@@ -29,9 +32,6 @@ function validateEventInput(data: CreateEventInput): EventError | null {
     }
     if (!data.category || data.category.trim() === "") {
         return InvalidEventData("Category is required.");
-    }
-    if (!data.organizerId || data.organizerId.trim() === "") {
-        return InvalidEventData("Organizer ID is required.");
     }
     if (
         !(data.startDateTime instanceof Date) ||
@@ -56,6 +56,13 @@ function validateEventInput(data: CreateEventInput): EventError | null {
         return InvalidEventData("Capacity must be a non-negative number.");
     }
     return null;
+}
+
+function validateEventInput(data: CreateEventInput): EventError | null {
+    if (!data.organizerId || data.organizerId.trim() === "") {
+        return InvalidEventData("Organizer ID is required.");
+    }
+    return validateEventFields(data);
 }
 
 export class EventService implements IEventService {
@@ -88,13 +95,29 @@ export class EventService implements IEventService {
     async updateEvent(
         id: number,
         data: CreateEventInput,
+        actingUserId: string,
+        actingUserRole: UserRole,
     ): Promise<Result<void, EventError>> {
-        const error = validateEventInput(data);
+        const error = validateEventFields(data);
         if (error) return Err(error);
+
         const found = await this.repository.getEventById(id);
         if (!found.ok) {
             return Err(EventNotFound(`Event with id ${id} not found.`));
         }
+        const event = found.value;
+
+        if (event.status === "cancelled" || event.status === "past") {
+            return Err(Forbidden("Cannot edit a cancelled or past event."));
+        }
+
+        if (actingUserRole === "user") {
+            return Err(Forbidden("Members are not allowed to edit events."));
+        }
+        if (actingUserRole === "staff" && event.organizerId !== actingUserId) {
+            return Err(Forbidden("You can only edit events you organized."));
+        }
+
         return this.repository.updateEvent(id, data);
     }
     
