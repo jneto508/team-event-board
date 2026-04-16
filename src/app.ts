@@ -64,6 +64,7 @@ class ExpressApp implements IApp {
         );
         this.app.use(Layouts);
         this.app.use(express.urlencoded({ extended: true }));
+        this.app.use(express.json());
     }
 
     private registerTemplating(): void {
@@ -375,6 +376,37 @@ class ExpressApp implements IApp {
                     },
                     organizerId,
                     touchAppSession(store),
+                );
+            }),
+        );
+
+        this.app.post(
+            "/events/:id/rsvp-toggle",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                const eventId = Number(req.params.id);
+                if (!Number.isInteger(eventId) || eventId <= 0) {
+                    res.status(400).json({
+                        error: "A valid event id is required.",
+                    });
+                    return;
+                }
+
+                const currentUser = getAuthenticatedUser(sessionStore(req));
+                if (!currentUser) {
+                    res.status(401).json({
+                        error: "Please log in to continue.",
+                    });
+                    return;
+                }
+
+                await this.eventController.toggleRSVP(
+                    res,
+                    eventId,
+                    currentUser,
                 );
             }),
         );
