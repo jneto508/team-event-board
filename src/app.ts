@@ -408,6 +408,66 @@ class ExpressApp implements IApp {
                 );
             }),
         );
+
+        this.app.post(
+            "/events/:id",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                const eventId = parseInt(req.params.id, 10);
+                if (isNaN(eventId)) {
+                    res.status(400).render("partials/error", {
+                        message: "Invalid event ID.",
+                        layout: false,
+                    });
+                    return;
+                }
+
+                const store = sessionStore(req);
+                const user = getAuthenticatedUser(store)!;
+
+                await this.eventController.updateEventFromForm(
+                    res,
+                    eventId,
+                    {
+                        title:
+                            typeof req.body.title === "string"
+                                ? req.body.title.trim()
+                                : "",
+                        description:
+                            typeof req.body.description === "string"
+                                ? req.body.description.trim()
+                                : "",
+                        location:
+                            typeof req.body.location === "string"
+                                ? req.body.location.trim()
+                                : "",
+                        category:
+                            typeof req.body.category === "string"
+                                ? req.body.category.trim()
+                                : "",
+                        capacity:
+                            typeof req.body.capacity === "string"
+                                ? req.body.capacity.trim()
+                                : "",
+                        startDateTime:
+                            typeof req.body.startDateTime === "string"
+                                ? req.body.startDateTime
+                                : "",
+                        endDateTime:
+                            typeof req.body.endDateTime === "string"
+                                ? req.body.endDateTime
+                                : "",
+                    },
+                    user.userId,
+                    user.role,
+                    touchAppSession(store),
+                );
+            }),
+        );
+
         // ── Error handler ────────────────────────────────────────────────
 
         this.app.use(
