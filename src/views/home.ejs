@@ -19,7 +19,7 @@
 
 <section class="mb-5 max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
   <div class="flex items-center justify-between mb-4">
-    <h2 class="text-xl font-semibold">Events</h2>
+    <h2 class="text-xl font-semibold">Published Events</h2>
     <a
       href="/events/new"
       class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium no-underline hover:bg-blue-700 text-sm"
@@ -27,7 +27,29 @@
       + Create Event
     </a>
   </div>
-  <p class="text-slate-500 text-sm">No events yet. Create one to get started.</p>
+  <% if (publishedEvents && publishedEvents.length > 0) { %>
+    <div class="grid gap-4">
+      <% publishedEvents.forEach((event) => { %>
+        <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-lg font-semibold text-slate-900 mb-1"><%= event.title %></h3>
+              <p class="text-slate-500 text-sm mb-2"><%= event.location %> · <%= event.category %></p>
+              <p class="text-slate-600 text-sm mb-0"><%= event.description %></p>
+            </div>
+            <a
+              href="/events/<%= event.id %>"
+              class="px-3.5 py-2 rounded-lg bg-white text-blue-700 border border-slate-200 no-underline hover:bg-blue-50 text-sm font-medium whitespace-nowrap"
+            >
+              View Event
+            </a>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <p class="text-slate-500 text-sm">No published events yet. Create one to get started.</p>
+  <% } %>
 </section>
 
 <section class="max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">

@@ -1,0 +1,73 @@
+<section class="p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <div class="mb-5">
+    <h2 class="text-xl font-semibold text-slate-900 mb-2">Comments</h2>
+    <p class="text-slate-500 text-sm">Ask a question or leave a note for this event.</p>
+  </div>
+
+  <% if (pageError) { %>
+    <%- include("../../partials/error", { message: pageError }) %>
+  <% } %>
+
+  <form
+    method="post"
+    action="/events/<%= event.id %>/comments"
+    hx-post="/events/<%= event.id %>/comments"
+    hx-target="#comments-panel"
+    hx-swap="outerHTML"
+    class="grid gap-3 mb-6"
+  >
+    <label class="text-sm font-medium text-slate-700" for="comment-content">Add a comment</label>
+    <textarea
+      id="comment-content"
+      name="content"
+      rows="3"
+      maxlength="280"
+      class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+      placeholder="Share a question, update, or note about this event."
+    ><%= commentValue %></textarea>
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <p class="text-xs text-slate-500 mb-0">Comments appear in chronological order.</p>
+      <button
+        type="submit"
+        class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium cursor-pointer hover:bg-blue-700 text-sm"
+      >
+        Post Comment
+      </button>
+    </div>
+  </form>
+
+  <% if (comments.length === 0) { %>
+    <p class="text-slate-500 mb-0">No comments yet. Start the conversation.</p>
+  <% } else { %>
+    <div class="grid gap-4">
+      <% comments.forEach((comment) => { %>
+        <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-sm font-semibold text-slate-900 mb-1"><%= comment.authorDisplayName %></p>
+              <p class="text-xs text-slate-500 mb-0"><%= formatRelativeTime(comment.createdAt) %></p>
+            </div>
+            <% if (comment.canDelete) { %>
+              <form
+                method="post"
+                action="/events/<%= event.id %>/comments/<%= comment.id %>/delete"
+                hx-post="/events/<%= event.id %>/comments/<%= comment.id %>/delete"
+                hx-target="#comments-panel"
+                hx-swap="outerHTML"
+                class="m-0"
+              >
+                <button
+                  type="submit"
+                  class="px-3 py-1.5 rounded-lg bg-white text-rose-700 border border-rose-200 cursor-pointer hover:bg-rose-50 text-xs font-medium"
+                >
+                  Delete
+                </button>
+              </form>
+            <% } %>
+          </div>
+          <p class="text-slate-700 mt-3 mb-0"><%= comment.content %></p>
+        </article>
+      <% }) %>
+    </div>
+  <% } %>
+</section>

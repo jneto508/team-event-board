@@ -4,6 +4,7 @@ import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
 import { IEventController } from "./controller/EventController";
+import { IEventCommentsController } from "./controller/EventCommentsController";
 import { AuthenticationRequired, AuthorizationRequired } from "./auth/errors";
 import type { UserRole } from "./auth/User";
 import { IApp } from "./contracts";
@@ -39,6 +40,7 @@ class ExpressApp implements IApp {
         private readonly authController: IAuthController,
         private readonly logger: ILoggingService,
         private readonly eventController: IEventController,
+        private readonly eventCommentsController: IEventCommentsController,
     ) {
         this.app = express();
         this.registerMiddleware();
@@ -306,10 +308,109 @@ class ExpressApp implements IApp {
                 this.logger.info(
                     `GET /home for ${browserSession.browserLabel}`,
                 );
-                res.render("home", {
-                    session: browserSession,
-                    pageError: null,
-                });
+                await this.eventCommentsController.showHome(res, browserSession);
+            }),
+        );
+
+        this.app.get(
+            "/events/:eventId",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                const browserSession = recordPageView(sessionStore(req));
+                const currentUser = getAuthenticatedUser(sessionStore(req));
+                if (!currentUser) {
+                    res.status(401).render("partials/error", {
+                        message: AuthenticationRequired(
+                            "Please log in to continue.",
+                        ).message,
+                        layout: false,
+                    });
+                    return;
+                }
+
+                await this.eventCommentsController.showEventDetail(
+                    res,
+                    typeof req.params.eventId === "string" ? req.params.eventId : "",
+                    currentUser.userId,
+                    browserSession,
+                );
+            }),
+        );
+
+        this.app.post(
+            "/events/:eventId/comments",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                const currentUser = getAuthenticatedUser(sessionStore(req));
+                if (!currentUser) {
+                    res.status(401).render("partials/error", {
+                        message: AuthenticationRequired(
+                            "Please log in to continue.",
+                        ).message,
+                        layout: false,
+                    });
+                    return;
+                }
+
+                await this.eventCommentsController.createCommentFromForm(
+                    res,
+                    {
+                        eventId:
+                            typeof req.params.eventId === "string"
+                                ? req.params.eventId
+                                : "",
+                        userId: currentUser.userId,
+                        content:
+                            typeof req.body.content === "string"
+                                ? req.body.content
+                                : "",
+                        htmx: this.isHtmxRequest(req),
+                    },
+                    touchAppSession(sessionStore(req)),
+                );
+            }),
+        );
+
+        this.app.post(
+            "/events/:eventId/comments/:commentId/delete",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                const currentUser = getAuthenticatedUser(sessionStore(req));
+                if (!currentUser) {
+                    res.status(401).render("partials/error", {
+                        message: AuthenticationRequired(
+                            "Please log in to continue.",
+                        ).message,
+                        layout: false,
+                    });
+                    return;
+                }
+
+                await this.eventCommentsController.deleteCommentFromForm(
+                    res,
+                    {
+                        eventId:
+                            typeof req.params.eventId === "string"
+                                ? req.params.eventId
+                                : "",
+                        commentId:
+                            typeof req.params.commentId === "string"
+                                ? req.params.commentId
+                                : "",
+                        actorUserId: currentUser.userId,
+                        htmx: this.isHtmxRequest(req),
+                    },
+                    touchAppSession(sessionStore(req)),
+                );
             }),
         );
 
@@ -410,6 +511,12 @@ export function CreateApp(
     authController: IAuthController,
     logger: ILoggingService,
     eventController: IEventController,
+    eventCommentsController: IEventCommentsController,
 ): IApp {
-    return new ExpressApp(authController, logger, eventController);
+    return new ExpressApp(
+        authController,
+        logger,
+        eventController,
+        eventCommentsController,
+    );
 }
