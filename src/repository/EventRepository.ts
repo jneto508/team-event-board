@@ -17,6 +17,8 @@ export type CreateEventInput = {
 export type CreateRSVPInput = {
     eventId: number;
     userId: string;
+    status?: RSVPStatus;
+    createdAt?: Date;
 };
 
 export type EventFilterStatus = "all" | EventStatus;
@@ -34,6 +36,10 @@ export interface IEventRepository {
     updateEvent(
         id: number,
         data: CreateEventInput,
+    ): Promise<Result<void, EventError>>;
+    updateEventStatus(
+        id: number,
+        status: EventStatus,
     ): Promise<Result<void, EventError>>;
     listEvents(
         filterStatus?: EventFilterStatus,
@@ -56,4 +62,8 @@ export interface IRSVPRepository {
         userId: string,
         filterStatus?: RSVPFilterStatus,
     ): Promise<Result<IRSVP[], RSVPError>>;
+    updateRSVPStatus(
+        id: number,
+        status: RSVPStatus,
+    ): Promise<Result<IRSVP, RSVPError>>;
 }

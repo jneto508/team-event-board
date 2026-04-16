@@ -1,6 +1,10 @@
 import type { Response } from "express";
-import type { IAppBrowserSession } from "../session/AppSession";
+import type {
+  IAppBrowserSession,
+  IAuthenticatedUserSession,
+} from "../session/AppSession";
 import type { IEventService } from "../service/EventService";
+import type { IRSVPService } from "../service/RSVPService";
 import type { EventError } from "../service/errors";
 import { ILoggingService } from "../service/LoggingService";
 import type { UserRole } from "../auth/User";
@@ -49,6 +53,7 @@ export interface IEventController {
 class EventController implements IEventController {
   constructor(
     private readonly eventService: IEventService,
+    private readonly rsvpService: IRSVPService,
     private readonly logger: ILoggingService,
   ) {}
 
@@ -254,7 +259,8 @@ class EventController implements IEventController {
 
 export function CreateEventController(
   eventService: IEventService,
+  rsvpService: IRSVPService,
   logger: ILoggingService,
 ): IEventController {
-  return new EventController(eventService, logger);
+  return new EventController(eventService, rsvpService, logger);
 }
