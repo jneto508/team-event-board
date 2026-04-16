@@ -19,7 +19,7 @@ export interface IEventService {
     ): Promise<Result<void, EventError>>;
 }
 
-function validateEventInput(data: CreateEventInput): EventError | null {
+function validateEventFields(data: CreateEventInput): EventError | null {
     if (!data.title || data.title.trim() === "") {
         return InvalidEventData("Title is required.");
     }
@@ -31,9 +31,6 @@ function validateEventInput(data: CreateEventInput): EventError | null {
     }
     if (!data.category || data.category.trim() === "") {
         return InvalidEventData("Category is required.");
-    }
-    if (!data.organizerId || data.organizerId.trim() === "") {
-        return InvalidEventData("Organizer ID is required.");
     }
     if (
         !(data.startDateTime instanceof Date) ||
@@ -58,6 +55,13 @@ function validateEventInput(data: CreateEventInput): EventError | null {
         return InvalidEventData("Capacity must be a non-negative number.");
     }
     return null;
+}
+
+function validateEventInput(data: CreateEventInput): EventError | null {
+    if (!data.organizerId || data.organizerId.trim() === "") {
+        return InvalidEventData("Organizer ID is required.");
+    }
+    return validateEventFields(data);
 }
 
 export class EventService implements IEventService {
@@ -93,7 +97,7 @@ export class EventService implements IEventService {
         actingUserId: string,
         actingUserRole: UserRole,
     ): Promise<Result<void, EventError>> {
-        const error = validateEventInput(data);
+        const error = validateEventFields(data);
         if (error) return Err(error);
 
         const found = await this.repository.getEventById(id);
