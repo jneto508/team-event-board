@@ -3,6 +3,11 @@ import express, { Request, RequestHandler, Response } from "express";
 import session from "express-session";
 import Layouts from "express-ejs-layouts";
 import { IAuthController } from "./auth/AuthController";
+import { IMemberRsvpsDashboardController } from "./rsvps/MemberRsvpsDashboardController";
+import {
+  AuthenticationRequired,
+  AuthorizationRequired,
+} from "./auth/errors";
 import { IEventController } from "./controller/EventController";
 import { AuthenticationRequired, AuthorizationRequired } from "./auth/errors";
 import type { UserRole } from "./auth/User";
@@ -33,6 +38,58 @@ function sessionStore(req: Request): AppSessionStore {
 }
 
 class ExpressApp implements IApp {
+  private readonly app: express.Express;
+
+  constructor(
+    private readonly authController: IAuthController,
+    private readonly memberRsvpsDashboardController: IMemberRsvpsDashboardController,
+    private readonly logger: ILoggingService,
+  ) {
+    this.app = express();
+    this.registerMiddleware();
+    this.registerTemplating();
+    this.registerRoutes();
+  }
+
+  private registerMiddleware(): void {
+    // Serve static files from src/static (create this directory to add your own assets)
+    this.app.use(express.static(path.join(process.cwd(), "src/static")));
+    this.app.use(
+      session({
+        name: "app.sid",
+        secret: process.env.SESSION_SECRET ?? "project-starter-demo-secret",
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+          httpOnly: true,
+          sameSite: "lax",
+        },
+      }),
+    );
+    this.app.use(Layouts);
+    this.app.use(express.urlencoded({ extended: true }));
+  }
+
+  private registerTemplating(): void {
+    this.app.set("view engine", "ejs");
+    this.app.set("views", path.join(process.cwd(), "src/views"));
+    this.app.set("layout", "layouts/base");
+  }
+
+  private isHtmxRequest(req: Request): boolean {
+    return req.get("HX-Request") === "true";
+  }
+
+  /**
+   * Middleware helper: returns true if the request is from an authenticated user.
+   * If the user is not authenticated, it handles the response (redirect or 401).
+   */
+  private requireAuthenticated(req: Request, res: Response): boolean {
+    const store = sessionStore(req);
+    touchAppSession(store);
+
+    if (getAuthenticatedUser(store)) {
+      return true;
     private readonly app: express.Express;
 
     constructor(
@@ -192,6 +249,91 @@ class ExpressApp implements IApp {
             }),
         );
 
+        const browserSession = recordPageView(sessionStore(req));
+        this.logger.info(`GET /home for ${browserSession.browserLabel}`);
+        res.render("home", { session: browserSession, pageError: null });
+      }),
+    );
+
+    this.app.get(
+      "/my-rsvps",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["user"], "Only members can view My RSVPs.")) {
+          return;
+        }
+
+        const browserSession = recordPageView(sessionStore(req));
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        this.logger.info(`GET /my-rsvps for ${currentUser.email}`);
+        await this.memberRsvpsDashboardController.showDashboard(
+          res,
+          currentUser.userId,
+          browserSession,
+        );
+      }),
+    );
+
+    this.app.post(
+      "/my-rsvps/:eventId/cancel",
+      asyncHandler(async (req, res) => {
+        if (!this.requireRole(req, res, ["user"], "Only members can manage My RSVPs.")) {
+          return;
+        }
+
+        const currentUser = getAuthenticatedUser(sessionStore(req));
+        if (!currentUser) {
+          res.status(401).render("partials/error", {
+            message: AuthenticationRequired("Please log in to continue.").message,
+            layout: false,
+          });
+          return;
+        }
+
+        const eventId = Number.parseInt(
+          typeof req.params.eventId === "string" ? req.params.eventId : "",
+          10,
+        );
+
+        await this.memberRsvpsDashboardController.cancelRsvp(
+          res,
+          currentUser.userId,
+          eventId,
+          touchAppSession(sessionStore(req)),
+        );
+      }),
+    );
+
+    // ── Error handler ────────────────────────────────────────────────
+
+    this.app.use((err: unknown, _req: Request, res: Response, _next: (value?: unknown) => void) => {
+      const message = err instanceof Error ? err.message : "Unexpected server error.";
+      this.logger.error(message);
+      res.status(500).render("partials/error", {
+        message: "Unexpected server error.",
+        layout: false,
+      });
+    });
+  }
+
+  getExpressApp(): express.Express {
+    return this.app;
+  }
+}
+
+export function CreateApp(
+  authController: IAuthController,
+  memberRsvpsDashboardController: IMemberRsvpsDashboardController,
+  logger: ILoggingService,
+): IApp {
+  return new ExpressApp(authController, memberRsvpsDashboardController, logger);
         // ── Admin routes ─────────────────────────────────────────────────
 
         this.app.get(
