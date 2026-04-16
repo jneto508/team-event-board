@@ -63,7 +63,7 @@ On error returns UnexpectedDependencyError
 # Description - 
 
 EventService.getAttendeeList(eventId: string, requestingUser: User)
-On error returns EventNoutFound error or UnauthorizedError depending on input
+On error returns EventNotFound error or UnauthorizedError depending on input
 If successful returns attendees list grouped by RSVP Status (attending, waitlisted, canceled) sorted by RSVP creation date
 Only the event's organizer or an admin may call this and all others receive UnauthorizedError
 
