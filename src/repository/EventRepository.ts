@@ -1,7 +1,8 @@
 import type { Result } from "../lib/result";
 import type { IEvent, EventStatus } from "../model/Event";
 import type { IRSVP, RSVPStatus } from "../model/RSVP";
-import type { EventError, RSVPError } from "../service/errors";
+import type { IComment } from "../model/Comment";
+import type { CommentError, EventError, RSVPError } from "../service/errors";
 
 export type CreateEventInput = {
     title: string;
@@ -17,6 +18,12 @@ export type CreateEventInput = {
 export type CreateRSVPInput = {
     eventId: number;
     userId: string;
+};
+
+export type CreateCommentInput = {
+    eventId: number;
+    userId: string;
+    content: string;
 };
 
 export type EventFilterStatus = "all" | EventStatus;
@@ -56,4 +63,11 @@ export interface IRSVPRepository {
         userId: string,
         filterStatus?: RSVPFilterStatus,
     ): Promise<Result<IRSVP[], RSVPError>>;
+}
+
+export interface ICommentRepository {
+    createComment(data: CreateCommentInput): Promise<Result<IComment, CommentError>>;
+    getCommentById(id: number): Promise<Result<IComment, CommentError>>;
+    listCommentsByEvent(eventId: number): Promise<Result<IComment[], CommentError>>;
+    deleteComment(id: number): Promise<Result<IComment, CommentError>>;
 }
