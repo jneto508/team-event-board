@@ -3,7 +3,6 @@ import type { IAppBrowserSession } from "../session/AppSession";
 import type { IEventService } from "../service/EventService";
 import type { EventError } from "../service/errors";
 import { ILoggingService } from "../service/LoggingService";
-import type { UserRole } from "../auth/User";
 
 export interface IEventController {
   showNewEventForm(res: Response, session: IAppBrowserSession): Promise<void>;
@@ -19,29 +18,6 @@ export interface IEventController {
       endDateTime: string;
     },
     organizerId: string,
-    session: IAppBrowserSession,
-  ): Promise<void>;
-  showEditEventForm(
-    res: Response,
-    eventId: number,
-    actingUserId: string,
-    actingUserRole: UserRole,
-    session: IAppBrowserSession,
-  ): Promise<void>;
-  updateEventFromForm(
-    res: Response,
-    eventId: number,
-    input: {
-      title: string;
-      description: string;
-      location: string;
-      category: string;
-      capacity: string;
-      startDateTime: string;
-      endDateTime: string;
-    },
-    actingUserId: string,
-    actingUserRole: UserRole,
     session: IAppBrowserSession,
   ): Promise<void>;
 }
@@ -63,7 +39,6 @@ class EventController implements IEventController {
 
   private mapErrorStatus(error: EventError): number {
     if (error.name === "EventNotFound") return 404;
-    if (error.name === "Forbidden") return 403;
     if (error.name === "InvalidEventData" || error.name === "ValidationError")
       return 400;
     return 500;
