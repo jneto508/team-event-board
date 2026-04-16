@@ -31,12 +31,12 @@ export class SavedEventService {
   ): Promise<Result<IEvent[], EventError>> {
 
     const savedIdsResult = await this.savedRepo.getSavedEventsByUser(userId);
-    if (!savedIdsResult.ok) {
+    if (savedIdsResult.ok === false) {
       return Err(savedIdsResult.value);
     }
 
     const allEventsResult = await this.eventRepo.getAllEvents();
-    if (!allEventsResult.ok) {
+    if (allEventsResult.ok === false) {
       return Err(allEventsResult.value);
     }
 

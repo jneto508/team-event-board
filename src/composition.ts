@@ -10,7 +10,6 @@ import { CreateMemberRsvpsDashboardService } from "./service/MemberRsvpsDashboar
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
 import { CreateInMemoryEventRepository } from "./repository/InMemoryEventRepository";
-import { CreateInMemoryRSVPRepository } from "./repository/InMemoryRSVPRepository";
 import { CreateInMemorySavedEventRepository } from "./repository/InMemorySavedEventRepository";
 import { CreateEventService } from "./service/EventService";
 import { CreateRSVPService } from "./service/RSVPService";
@@ -35,13 +34,12 @@ export function createComposedApp(logger?: ILoggingService): IApp {
 
     // Repository wiring
     const eventRepository = CreateInMemoryEventRepository();
-    const rsvpRepository = CreateInMemoryRSVPRepository();
     const savedEventRepository = CreateInMemorySavedEventRepository();
 
     // RSVP dashboard wiring
     const memberRsvpsDashboardService = CreateMemberRsvpsDashboardService(
         eventRepository,
-        rsvpRepository,
+        eventRepository,
     );
     const memberRsvpsDashboardController = CreateMemberRsvpsDashboardController(
         memberRsvpsDashboardService,
@@ -50,7 +48,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
 
     // Event wiring
     const eventService = CreateEventService(eventRepository);
-    const rsvpService = CreateRSVPService(eventRepository, rsvpRepository);
+    const rsvpService = CreateRSVPService(eventRepository, eventRepository);
     const savedEventService = new SavedEventService(savedEventRepository, eventRepository);
     const eventController = CreateEventController(
         eventService,
