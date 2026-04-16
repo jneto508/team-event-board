@@ -30,6 +30,11 @@ export const UnexpectedDependencyError = (message: string): EventError => ({
     message
 });
 
+export const RSVPUnexpectedDependencyError = (message: string): RSVPError => ({
+    name: "UnexpectedDependencyError",
+    message
+});
+
 export const RSVPNotFound = (message: string): RSVPError => ({
     name: "RSVPNotFound",
     message
