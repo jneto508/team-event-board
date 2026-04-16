@@ -195,6 +195,61 @@ class EventController implements IEventController {
       },
     });
   }
+
+  async updateEventFromForm(
+    res: Response,
+    eventId: number,
+    input: {
+      title: string;
+      description: string;
+      location: string;
+      category: string;
+      capacity: string;
+      startDateTime: string;
+      endDateTime: string;
+    },
+    actingUserId: string,
+    actingUserRole: UserRole,
+    _session: IAppBrowserSession,
+  ): Promise<void> {
+    this.logger.info(`Updating event ${eventId} from form`);
+
+    const result = await this.eventService.updateEvent(
+      eventId,
+      {
+        title: input.title,
+        description: input.description,
+        location: input.location,
+        category: input.category,
+        capacity: input.capacity !== "" ? parseInt(input.capacity, 10) : undefined,
+        startDateTime: new Date(input.startDateTime),
+        endDateTime: new Date(input.endDateTime),
+        organizerId: actingUserId,
+      },
+      actingUserId,
+      actingUserRole,
+    );
+
+    if (!result.ok && this.isEventError(result.value)) {
+      const error = result.value;
+      const status = this.mapErrorStatus(error);
+      res.status(status).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    if (!result.ok) {
+      res.status(500).render("partials/error", {
+        message: "Unable to update event.",
+        layout: false,
+      });
+      return;
+    }
+
+    res.redirect("/home");
+  }
 }
 
 export function CreateEventController(
