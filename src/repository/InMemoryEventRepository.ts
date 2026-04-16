@@ -1,13 +1,20 @@
 import { Err, Ok, Result } from "../lib/result";
-import { UnexpectedDependencyError } from "../service/errors";
+import { EventStatus, IEvent } from "../model/Event";
+import {
+    EventNotFound,
+    type EventError,
+    UnexpectedDependencyError,
+} from "../service/errors";
 import { EventFilterStatus, type IEventRepository } from "./EventRepository";
-import { IEvent } from "../model/Event";
 import { type CreateEventInput } from "./EventRepository";
-import { type EventError } from "../service/errors";
 
 class InMemoryEventRepository implements IEventRepository {
     private events: IEvent[] = [];
     private nextEventId = 1;
+
+    private findEvent(id: number): IEvent | undefined {
+        return this.events.find((candidate) => candidate.id === id);
+    }
 
     async createEvent(
         data: CreateEventInput,
@@ -44,11 +51,23 @@ class InMemoryEventRepository implements IEventRepository {
         }
         return Ok(event);
     }
+
     async getEventsByOrganizer(
-        _organizerId: string,
+        organizerId: string,
     ): Promise<Result<IEvent[], EventError>> {
-        throw new Error("Not implemented");
+        try {
+            return Ok(
+                this.events.filter((event) => event.organizerId === organizerId),
+            );
+        } catch {
+            return Err(
+                UnexpectedDependencyError(
+                    "Failed to retrieve organizer events.",
+                ),
+            );
+        }
     }
+
     async updateEvent(
         id: number,
         data: CreateEventInput,
@@ -67,19 +86,76 @@ class InMemoryEventRepository implements IEventRepository {
         event.updatedAt = new Date();
         return Ok(undefined);
     }
+
+    async updateEventStatus(
+        id: number,
+        status: EventStatus,
+    ): Promise<Result<void, EventError>> {
+        try {
+            const event = this.findEvent(id);
+            if (!event) {
+                return Err(EventNotFound(`Event with id ${id} not found.`));
+            }
+
+            event.status = status;
+            event.updatedAt = new Date();
+            return Ok(undefined);
+        } catch {
+            return Err(
+                UnexpectedDependencyError("Failed to update event status."),
+            );
+        }
+    }
+
     async getAllEvents(): Promise<Result<IEvent[], EventError>> {
-        throw new Error("Not implemented");
+        try {
+            return Ok([...this.events]);
+        } catch {
+            return Err(UnexpectedDependencyError("Failed to retrieve events."));
+        }
     }
+
     async getAllArchived(): Promise<Result<IEvent[], EventError>> {
-        throw new Error("Not implemented");
+        try {
+            return Ok(
+                this.events.filter((event) => event.status === "past"),
+            );
+        } catch {
+            return Err(
+                UnexpectedDependencyError("Failed to retrieve archived events."),
+            );
+        }
     }
-    async deleteEvent(_id: number): Promise<Result<void, EventError>> {
-        throw new Error("Not implemented");
+
+    async deleteEvent(id: number): Promise<Result<void, EventError>> {
+        try {
+            const initialLength = this.events.length;
+            this.events = this.events.filter((event) => event.id !== id);
+
+            if (this.events.length === initialLength) {
+                return Err(EventNotFound(`Event with id ${id} not found.`));
+            }
+
+            return Ok(undefined);
+        } catch {
+            return Err(UnexpectedDependencyError("Failed to delete event."));
+        }
     }
+
     async listEvents(
-        _filterStatus?: EventFilterStatus,
+        filterStatus: EventFilterStatus = "all",
     ): Promise<Result<IEvent[], EventError>> {
-        throw new Error("Not implemented");
+        try {
+            if (filterStatus === "all") {
+                return Ok([...this.events]);
+            }
+
+            return Ok(
+                this.events.filter((event) => event.status === filterStatus),
+            );
+        } catch {
+            return Err(UnexpectedDependencyError("Failed to list events."));
+        }
     }
 }
 
