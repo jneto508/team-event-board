@@ -5,7 +5,6 @@ import type { ICommentRepository, IEventRepository } from "../repository/EventRe
 import {
   CommentAuthorizationRequired,
   CommentNotFound,
-  EventNotFound,
   InvalidCommentData,
   type CommentError,
 } from "./errors";
@@ -57,6 +56,10 @@ function UnexpectedCommentDependencyError(message: string): CommentError {
   return { name: "UnexpectedDependencyError", message };
 }
 
+function CommentEventNotFound(message: string): CommentError {
+  return { name: "EventNotFound", message };
+}
+
 class EventCommentsService implements IEventCommentsService {
   constructor(
     private readonly events: IEventRepository,
@@ -74,13 +77,13 @@ class EventCommentsService implements IEventCommentsService {
     viewerUserId?: string,
   ): Promise<Result<EventCommentView, CommentError>> {
     const authorResult = await this.users.findById(comment.userId);
-    if (!authorResult.ok) {
+    if (authorResult.ok === false) {
       return Err(UnexpectedCommentDependencyError(authorResult.value.message));
     }
 
     const eventResult = await this.events.getEventById(comment.eventId);
-    if (!eventResult.ok) {
-      return Err(EventNotFound(eventResult.value.message));
+    if (eventResult.ok === false) {
+      return Err(CommentEventNotFound(`Event ${comment.eventId} was not found.`));
     }
 
     const viewerIsAdmin = viewerUserId ? await this.isAdmin(viewerUserId) : false;
@@ -103,7 +106,7 @@ class EventCommentsService implements IEventCommentsService {
 
   async listPublishedEvents(): Promise<Result<PublishedEventSummary[], CommentError>> {
     const result = await this.events.listEvents("published");
-    if (!result.ok) {
+    if (result.ok === false) {
       return Err(UnexpectedCommentDependencyError(result.value.message));
     }
 
@@ -134,20 +137,20 @@ class EventCommentsService implements IEventCommentsService {
     }
 
     const eventResult = await this.events.getEventById(parsedEventId);
-    if (!eventResult.ok || eventResult.value.status !== "published") {
-      return Err(EventNotFound("Published event not found."));
+    if (eventResult.ok === false || eventResult.value.status !== "published") {
+      return Err(CommentEventNotFound("Published event not found."));
     }
 
     const commentsResult = await this.comments.listCommentsByEvent(parsedEventId);
-    if (!commentsResult.ok) {
+    if (commentsResult.ok === false) {
       return Err(UnexpectedCommentDependencyError(commentsResult.value.message));
     }
 
     const views: EventCommentView[] = [];
     for (const comment of commentsResult.value) {
       const viewResult = await this.toCommentView(comment, viewerUserId);
-      if (!viewResult.ok) {
-        return viewResult;
+      if (viewResult.ok === false) {
+        return Err(viewResult.value);
       }
       views.push(viewResult.value);
     }
@@ -190,12 +193,12 @@ class EventCommentsService implements IEventCommentsService {
     }
 
     const eventResult = await this.events.getEventById(parsedEventId);
-    if (!eventResult.ok || eventResult.value.status !== "published") {
-      return Err(EventNotFound("Published event not found."));
+    if (eventResult.ok === false || eventResult.value.status !== "published") {
+      return Err(CommentEventNotFound("Published event not found."));
     }
 
     const userResult = await this.users.findById(normalizedUserId);
-    if (!userResult.ok) {
+    if (userResult.ok === false) {
       return Err(UnexpectedCommentDependencyError(userResult.value.message));
     }
     if (!userResult.value) {
@@ -224,7 +227,7 @@ class EventCommentsService implements IEventCommentsService {
     }
 
     const actorResult = await this.users.findById(normalizedActorUserId);
-    if (!actorResult.ok) {
+    if (actorResult.ok === false) {
       return Err(UnexpectedCommentDependencyError(actorResult.value.message));
     }
     if (!actorResult.value) {
@@ -232,13 +235,13 @@ class EventCommentsService implements IEventCommentsService {
     }
 
     const commentResult = await this.comments.getCommentById(parsedCommentId);
-    if (!commentResult.ok) {
-      return Err(CommentNotFound(commentResult.value.message));
+    if (commentResult.ok === false) {
+      return Err(CommentNotFound(`Comment ${parsedCommentId} was not found.`));
     }
 
     const eventResult = await this.events.getEventById(commentResult.value.eventId);
-    if (!eventResult.ok) {
-      return Err(EventNotFound(eventResult.value.message));
+    if (eventResult.ok === false) {
+      return Err(CommentEventNotFound(`Event ${commentResult.value.eventId} was not found.`));
     }
 
     const canDelete =
