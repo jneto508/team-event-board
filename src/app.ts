@@ -379,6 +379,35 @@ class ExpressApp implements IApp {
             }),
         );
 
+        this.app.get(
+            "/events/:id/edit",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                const eventId = parseInt(req.params.id, 10);
+                if (isNaN(eventId)) {
+                    res.status(400).render("partials/error", {
+                        message: "Invalid event ID.",
+                        layout: false,
+                    });
+                    return;
+                }
+
+                const store = sessionStore(req);
+                const user = getAuthenticatedUser(store)!;
+                const browserSession = recordPageView(store);
+
+                await this.eventController.showEditEventForm(
+                    res,
+                    eventId,
+                    user.userId,
+                    user.role,
+                    browserSession,
+                );
+            }),
+        );
         // ── Error handler ────────────────────────────────────────────────
 
         this.app.use(
