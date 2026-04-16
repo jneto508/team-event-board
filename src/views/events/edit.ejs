@@ -1,0 +1,29 @@
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <h1 class="text-3xl font-bold text-slate-900 mb-1">Edit Event</h1>
+  <p class="text-slate-500">Update the details below. Changes will be saved immediately.</p>
+</section>
+
+<% if (pageError) { %>
+  <%- include("../partials/error", { message: pageError }) %>
+<% } %>
+
+<section class="max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <form class="grid gap-5" method="post" action="/events/<%= eventId %>">
+
+    <div class="flex gap-3 pt-1">
+      <button
+        type="submit"
+        class="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-medium cursor-pointer hover:bg-blue-700"
+      >
+        Save Changes
+      </button>
+      <a
+        href="/home"
+        class="px-5 py-2.5 rounded-lg bg-white text-slate-700 border border-slate-200 font-medium no-underline hover:bg-slate-50"
+      >
+        Cancel
+      </a>
+    </div>
+
+  </form>
+</section>
