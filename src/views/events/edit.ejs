@@ -1,0 +1,127 @@
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <h1 class="text-3xl font-bold text-slate-900 mb-1">Edit Event</h1>
+  <p class="text-slate-500">Update the details below. Changes will be saved immediately.</p>
+</section>
+
+<% if (pageError) { %>
+  <%- include("../partials/error", { message: pageError }) %>
+<% } %>
+
+<section class="max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <form class="grid gap-5" method="post" action="/events/<%= eventId %>">
+
+    <div class="grid gap-1.5">
+      <label for="title" class="text-sm font-medium">Title <span class="text-red-500">*</span></label>
+      <input
+        id="title"
+        name="title"
+        type="text"
+        required
+        value="<%= formValues.title %>"
+        placeholder="e.g. Spring Campus Cleanup"
+        class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
+      />
+    </div>
+
+    <div class="grid gap-1.5">
+      <label for="description" class="text-sm font-medium">Description <span class="text-red-500">*</span></label>
+      <textarea
+        id="description"
+        name="description"
+        required
+        rows="4"
+        placeholder="What is this event about?"
+        class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500 resize-y"
+      ><%= formValues.description %></textarea>
+    </div>
+
+    <div class="grid gap-1.5">
+      <label for="location" class="text-sm font-medium">Location <span class="text-red-500">*</span></label>
+      <input
+        id="location"
+        name="location"
+        type="text"
+        required
+        value="<%= formValues.location %>"
+        placeholder="e.g. Main Quad, Building 10 Room 204"
+        class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
+      />
+    </div>
+
+    <div class="grid gap-1.5">
+      <label for="category" class="text-sm font-medium">Category <span class="text-red-500">*</span></label>
+      <input
+        id="category"
+        name="category"
+        type="text"
+        required
+        value="<%= formValues.category %>"
+        placeholder="e.g. social, academic, sports"
+        class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
+      />
+    </div>
+
+    <div class="grid gap-1.5">
+      <label for="capacity" class="text-sm font-medium">Capacity <span class="text-slate-400 font-normal">(optional — leave blank for unlimited)</span></label>
+      <input
+        id="capacity"
+        name="capacity"
+        type="number"
+        min="0"
+        value="<%= formValues.capacity %>"
+        placeholder="e.g. 50"
+        class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
+      />
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-5" x-data="{
+      start: '<%= formValues.startDateTime %>',
+      end: '<%= formValues.endDateTime %>',
+      get endError() {
+        return this.start && this.end && this.end <= this.start;
+      }
+    }">
+      <div class="grid gap-1.5">
+        <label for="startDateTime" class="text-sm font-medium">Start Date & Time <span class="text-red-500">*</span></label>
+        <input
+          id="startDateTime"
+          name="startDateTime"
+          type="datetime-local"
+          required
+          x-model="start"
+          class="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
+        />
+      </div>
+
+      <div class="grid gap-1.5">
+        <label for="endDateTime" class="text-sm font-medium">End Date & Time <span class="text-red-500">*</span></label>
+        <input
+          id="endDateTime"
+          name="endDateTime"
+          type="datetime-local"
+          required
+          x-model="end"
+          :class="endError ? 'border-red-400 bg-red-50' : 'border-slate-300 bg-white'"
+          class="w-full px-3 py-2.5 border rounded-xl focus:outline-2 focus:outline-blue-500/20 focus:border-blue-500"
+        />
+        <p x-show="endError" class="text-xs text-red-600 mt-0.5">End time must be after start time.</p>
+      </div>
+    </div>
+
+    <div class="flex gap-3 pt-1">
+      <button
+        type="submit"
+        class="px-5 py-2.5 rounded-lg bg-blue-600 text-white font-medium cursor-pointer hover:bg-blue-700"
+      >
+        Save Changes
+      </button>
+      <a
+        href="/home"
+        class="px-5 py-2.5 rounded-lg bg-white text-slate-700 border border-slate-200 font-medium no-underline hover:bg-slate-50"
+      >
+        Cancel
+      </a>
+    </div>
+
+  </form>
+</section>

@@ -1,31 +1,52 @@
 import { CreateInMemoryEventRepository } from "../../src/repository/InMemoryEventRepository";
 
 describe("InMemoryEventRepository", () => {
-  it("lists a member's RSVPs from in-memory data", async () => {
+  it("lists seeded published events from memory", async () => {
     const repository = CreateInMemoryEventRepository();
 
-    const result = await repository.listRSVPsByUser("user-reader");
+    const result = await repository.listEvents("published");
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value).toHaveLength(4);
-      expect(result.value.map((rsvp) => rsvp.eventId)).toEqual([1, 2, 3, 4]);
+      expect(result.value.map((event) => event.title)).toEqual([
+        "Spring Hack Night",
+        "Design Critique Circle",
+      ]);
     }
   });
 
-  it("updates RSVP status in memory", async () => {
+  it("lists comments in chronological order for an event", async () => {
     const repository = CreateInMemoryEventRepository();
 
-    const updated = await repository.updateRSVPStatus(1, "cancelled");
-    expect(updated.ok).toBe(true);
-    if (updated.ok) {
-      expect(updated.value.status).toBe("cancelled");
+    const result = await repository.listCommentsByEvent(1);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.map((comment) => comment.userId)).toEqual([
+        "user-reader",
+        "user-staff",
+      ]);
+    }
+  });
+
+  it("creates and deletes comments in memory", async () => {
+    const repository = CreateInMemoryEventRepository();
+
+    const created = await repository.createComment({
+      eventId: 1,
+      userId: "user-admin",
+      content: "Looking forward to this.",
+    });
+
+    expect(created.ok).toBe(true);
+    if (!created.ok) {
+      return;
     }
 
-    const fetched = await repository.getRSVPById(1);
-    expect(fetched.ok).toBe(true);
-    if (fetched.ok) {
-      expect(fetched.value.status).toBe("cancelled");
+    const removed = await repository.deleteComment(created.value.id);
+    expect(removed.ok).toBe(true);
+    if (removed.ok) {
+      expect(removed.value.content).toBe("Looking forward to this.");
     }
   });
 });

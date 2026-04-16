@@ -1,23 +1,35 @@
-import { Ok, Err, type Result } from "../lib/result";
-import { createEvent, type IEvent, type EventStatus } from "../model/Event";
+import { Err, Ok, type Result } from "../lib/result";
+import { createComment, type IComment } from "../model/Comment";
+import { createEvent, updateEvent, type IEvent } from "../model/Event";
 import { createRSVP, type IRSVP, type RSVPStatus } from "../model/RSVP";
 import type {
+  CreateCommentInput,
   CreateEventInput,
   CreateRSVPInput,
   EventFilterStatus,
+  ICommentRepository,
   IEventRepository,
   IRSVPRepository,
   RSVPFilterStatus,
 } from "./EventRepository";
 import {
+  CommentNotFound,
   EventNotFound,
   RSVPNotFound,
-  UnexpectedDependencyError,
+  type CommentError,
   type EventError,
   type RSVPError,
 } from "../service/errors";
 
+function UnexpectedEventDependencyError(message: string): EventError {
+  return { name: "UnexpectedDependencyError", message };
+}
+
 function UnexpectedRsvpDependencyError(message: string): RSVPError {
+  return { name: "UnexpectedDependencyError", message };
+}
+
+function UnexpectedCommentDependencyError(message: string): CommentError {
   return { name: "UnexpectedDependencyError", message };
 }
 
@@ -44,7 +56,7 @@ const DEMO_EVENTS: IEvent[] = [
     capacity: 18,
     startDateTime: new Date("2026-04-20T22:00:00.000Z"),
     endDateTime: new Date("2026-04-21T00:00:00.000Z"),
-    organizerId: "user-staff",
+    organizerId: "user-reader",
     createdAt: new Date("2026-03-12T16:00:00.000Z"),
     updatedAt: new Date("2026-03-12T16:00:00.000Z"),
   }),
@@ -61,19 +73,6 @@ const DEMO_EVENTS: IEvent[] = [
     createdAt: new Date("2026-02-20T14:00:00.000Z"),
     updatedAt: new Date("2026-03-16T01:30:00.000Z"),
   }),
-  createEvent(4, {
-    title: "Community Picnic",
-    description: "Outdoor social gathering with games and food.",
-    location: "Riverfront Park",
-    category: "social",
-    status: "cancelled",
-    capacity: 80,
-    startDateTime: new Date("2026-04-10T16:00:00.000Z"),
-    endDateTime: new Date("2026-04-10T19:00:00.000Z"),
-    organizerId: "user-staff",
-    createdAt: new Date("2026-03-01T12:00:00.000Z"),
-    updatedAt: new Date("2026-04-08T17:00:00.000Z"),
-  }),
 ];
 
 const DEMO_RSVPS: IRSVP[] = [
@@ -89,56 +88,68 @@ const DEMO_RSVPS: IRSVP[] = [
     status: "waitlisted",
     createdAt: new Date("2026-03-21T10:00:00.000Z"),
   }),
-  createRSVP(3, {
-    eventId: 3,
+];
+
+const DEMO_COMMENTS: IComment[] = [
+  createComment(1, {
+    eventId: 1,
     userId: "user-reader",
-    status: "going",
-    createdAt: new Date("2026-02-25T10:00:00.000Z"),
+    content: "Will there be time for team matching before we start coding?",
+    createdAt: new Date("2026-04-14T13:00:00.000Z"),
   }),
-  createRSVP(4, {
-    eventId: 4,
-    userId: "user-reader",
-    status: "going",
-    createdAt: new Date("2026-03-05T10:00:00.000Z"),
-  }),
-  createRSVP(5, {
+  createComment(2, {
     eventId: 1,
     userId: "user-staff",
-    status: "going",
-    createdAt: new Date("2026-03-22T10:00:00.000Z"),
+    content: "Yes. We will start with quick intros and topic pitches at the top of the hour.",
+    createdAt: new Date("2026-04-14T13:12:00.000Z"),
+  }),
+  createComment(3, {
+    eventId: 2,
+    userId: "user-admin",
+    content: "Please bring one mockup or flow you want feedback on.",
+    createdAt: new Date("2026-04-14T11:45:00.000Z"),
   }),
 ];
 
-function matchesEventStatusFilter(event: IEvent, filterStatus: EventFilterStatus = "all"): boolean {
+function matchesEventStatusFilter(
+  event: IEvent,
+  filterStatus: EventFilterStatus = "all",
+): boolean {
   return filterStatus === "all" ? true : event.status === filterStatus;
 }
 
-function matchesRsvpStatusFilter(rsvp: IRSVP, filterStatus: RSVPFilterStatus = "all"): boolean {
+function matchesRsvpStatusFilter(
+  rsvp: IRSVP,
+  filterStatus: RSVPFilterStatus = "all",
+): boolean {
   return filterStatus === "all" ? true : rsvp.status === filterStatus;
 }
 
-class InMemoryEventRepository implements IEventRepository, IRSVPRepository {
+class InMemoryEventRepository
+  implements IEventRepository, IRSVPRepository, ICommentRepository
+{
   private nextEventId: number;
   private nextRsvpId: number;
+  private nextCommentId: number;
 
   constructor(
     private readonly events: IEvent[],
     private readonly rsvps: IRSVP[],
+    private readonly comments: IComment[],
   ) {
     this.nextEventId = events.reduce((max, event) => Math.max(max, event.id), 0) + 1;
     this.nextRsvpId = rsvps.reduce((max, rsvp) => Math.max(max, rsvp.id), 0) + 1;
+    this.nextCommentId =
+      comments.reduce((max, comment) => Math.max(max, comment.id), 0) + 1;
   }
 
   async createEvent(data: CreateEventInput): Promise<Result<IEvent, EventError>> {
     try {
-      const event = createEvent(this.nextEventId++, {
-        ...data,
-        organizerId: data.organizerId,
-      });
+      const event = createEvent(this.nextEventId++, data);
       this.events.push(event);
       return Ok(event);
     } catch {
-      return Err(UnexpectedDependencyError("Unable to create the event."));
+      return Err(UnexpectedEventDependencyError("Failed to create event."));
     }
   }
 
@@ -150,15 +161,42 @@ class InMemoryEventRepository implements IEventRepository, IRSVPRepository {
       }
       return Ok(event);
     } catch {
-      return Err(UnexpectedDependencyError("Unable to load the event."));
+      return Err(UnexpectedEventDependencyError("Failed to load event."));
     }
   }
 
-  async getEventsByOrganizer(organizerId: string): Promise<Result<IEvent[], EventError>> {
+  async getEventsByOrganizer(
+    organizerId: string,
+  ): Promise<Result<IEvent[], EventError>> {
     try {
       return Ok(this.events.filter((event) => event.organizerId === organizerId));
     } catch {
-      return Err(UnexpectedDependencyError("Unable to load organizer events."));
+      return Err(UnexpectedEventDependencyError("Failed to load organizer events."));
+    }
+  }
+
+  async updateEvent(
+    id: number,
+    data: CreateEventInput,
+  ): Promise<Result<void, EventError>> {
+    try {
+      const event = this.events.find((candidate) => candidate.id === id);
+      if (!event) {
+        return Err(EventNotFound(`Event ${id} was not found.`));
+      }
+
+      updateEvent(event, {
+        title: data.title,
+        description: data.description,
+        location: data.location,
+        category: data.category,
+        capacity: data.capacity,
+        startDateTime: data.startDateTime,
+        endDateTime: data.endDateTime,
+      });
+      return Ok(undefined);
+    } catch {
+      return Err(UnexpectedEventDependencyError("Failed to update event."));
     }
   }
 
@@ -166,7 +204,7 @@ class InMemoryEventRepository implements IEventRepository, IRSVPRepository {
     try {
       return Ok([...this.events]);
     } catch {
-      return Err(UnexpectedDependencyError("Unable to load events."));
+      return Err(UnexpectedEventDependencyError("Failed to list events."));
     }
   }
 
@@ -174,7 +212,7 @@ class InMemoryEventRepository implements IEventRepository, IRSVPRepository {
     try {
       return Ok(this.events.filter((event) => event.status === "past" || event.status === "cancelled"));
     } catch {
-      return Err(UnexpectedDependencyError("Unable to load archived events."));
+      return Err(UnexpectedEventDependencyError("Failed to list archived events."));
     }
   }
 
@@ -184,32 +222,30 @@ class InMemoryEventRepository implements IEventRepository, IRSVPRepository {
       if (index === -1) {
         return Err(EventNotFound(`Event ${id} was not found.`));
       }
-
       this.events.splice(index, 1);
       return Ok(undefined);
     } catch {
-      return Err(UnexpectedDependencyError("Unable to delete the event."));
+      return Err(UnexpectedEventDependencyError("Failed to delete event."));
     }
   }
 
-  async listEvents(filterStatus: EventFilterStatus = "all"): Promise<Result<IEvent[], EventError>> {
+  async listEvents(
+    filterStatus: EventFilterStatus = "all",
+  ): Promise<Result<IEvent[], EventError>> {
     try {
       return Ok(this.events.filter((event) => matchesEventStatusFilter(event, filterStatus)));
     } catch {
-      return Err(UnexpectedDependencyError("Unable to list events."));
+      return Err(UnexpectedEventDependencyError("Failed to filter events."));
     }
   }
 
   async createRSVP(data: CreateRSVPInput): Promise<Result<IRSVP, RSVPError>> {
     try {
-      const rsvp = createRSVP(this.nextRsvpId++, {
-        eventId: data.eventId,
-        userId: data.userId,
-      });
+      const rsvp = createRSVP(this.nextRsvpId++, data);
       this.rsvps.push(rsvp);
       return Ok(rsvp);
     } catch {
-      return Err(UnexpectedRsvpDependencyError("Unable to create the RSVP."));
+      return Err(UnexpectedRsvpDependencyError("Unable to create RSVP."));
     }
   }
 
@@ -221,11 +257,14 @@ class InMemoryEventRepository implements IEventRepository, IRSVPRepository {
       }
       return Ok(rsvp);
     } catch {
-      return Err(UnexpectedRsvpDependencyError("Unable to load the RSVP."));
+      return Err(UnexpectedRsvpDependencyError("Unable to load RSVP."));
     }
   }
 
-  async getRSVPByEventAndUser(eventId: number, userId: string): Promise<Result<IRSVP, RSVPError>> {
+  async getRSVPByEventAndUser(
+    eventId: number,
+    userId: string,
+  ): Promise<Result<IRSVP, RSVPError>> {
     try {
       const rsvp = this.rsvps.find(
         (candidate) => candidate.eventId === eventId && candidate.userId === userId,
@@ -235,20 +274,7 @@ class InMemoryEventRepository implements IEventRepository, IRSVPRepository {
       }
       return Ok(rsvp);
     } catch {
-      return Err(UnexpectedRsvpDependencyError("Unable to load the RSVP."));
-    }
-  }
-
-  async updateRSVPStatus(id: number, status: RSVPStatus): Promise<Result<IRSVP, RSVPError>> {
-    try {
-      const rsvp = this.rsvps.find((candidate) => candidate.id === id);
-      if (!rsvp) {
-        return Err(RSVPNotFound(`RSVP ${id} was not found.`));
-      }
-      rsvp.status = status;
-      return Ok(rsvp);
-    } catch {
-      return Err(UnexpectedRsvpDependencyError("Unable to update the RSVP."));
+      return Err(UnexpectedRsvpDependencyError("Unable to load RSVP."));
     }
   }
 
@@ -289,10 +315,58 @@ class InMemoryEventRepository implements IEventRepository, IRSVPRepository {
       return Err(UnexpectedRsvpDependencyError("Unable to list user RSVPs."));
     }
   }
+
+  async createComment(data: CreateCommentInput): Promise<Result<IComment, CommentError>> {
+    try {
+      const comment = createComment(this.nextCommentId++, data);
+      this.comments.push(comment);
+      return Ok(comment);
+    } catch {
+      return Err(UnexpectedCommentDependencyError("Unable to create comment."));
+    }
+  }
+
+  async getCommentById(id: number): Promise<Result<IComment, CommentError>> {
+    try {
+      const comment = this.comments.find((candidate) => candidate.id === id);
+      if (!comment) {
+        return Err(CommentNotFound(`Comment ${id} was not found.`));
+      }
+      return Ok(comment);
+    } catch {
+      return Err(UnexpectedCommentDependencyError("Unable to load comment."));
+    }
+  }
+
+  async listCommentsByEvent(eventId: number): Promise<Result<IComment[], CommentError>> {
+    try {
+      return Ok(
+        this.comments
+          .filter((comment) => comment.eventId === eventId)
+          .sort((left, right) => left.createdAt.getTime() - right.createdAt.getTime()),
+      );
+    } catch {
+      return Err(UnexpectedCommentDependencyError("Unable to list comments."));
+    }
+  }
+
+  async deleteComment(id: number): Promise<Result<IComment, CommentError>> {
+    try {
+      const index = this.comments.findIndex((comment) => comment.id === id);
+      if (index === -1) {
+        return Err(CommentNotFound(`Comment ${id} was not found.`));
+      }
+      const [removed] = this.comments.splice(index, 1);
+      return Ok(removed);
+    } catch {
+      return Err(UnexpectedCommentDependencyError("Unable to delete comment."));
+    }
+  }
 }
 
-export function CreateInMemoryEventRepository(): IEventRepository & IRSVPRepository {
-  return new InMemoryEventRepository([...DEMO_EVENTS], [...DEMO_RSVPS]);
+export function CreateInMemoryEventRepository():
+  IEventRepository & IRSVPRepository & ICommentRepository {
+  return new InMemoryEventRepository([...DEMO_EVENTS], [...DEMO_RSVPS], [...DEMO_COMMENTS]);
 }
 
-export { DEMO_EVENTS, DEMO_RSVPS };
+export { DEMO_COMMENTS, DEMO_EVENTS, DEMO_RSVPS };
