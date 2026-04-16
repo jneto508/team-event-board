@@ -37,6 +37,10 @@ export interface IEventRepository {
         id: number,
         data: CreateEventInput,
     ): Promise<Result<void, EventError>>;
+    updateEventStatus(
+        id: number,
+        status: EventStatus,
+    ): Promise<Result<void, EventError>>;
     listEvents(
         filterStatus?: EventFilterStatus,
     ): Promise<Result<IEvent[], EventError>>;
