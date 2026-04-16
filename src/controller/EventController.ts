@@ -1,8 +1,5 @@
 import type { Response } from "express";
-import type {
-  IAppBrowserSession,
-  IAuthenticatedUserSession,
-} from "../session/AppSession";
+import type { IAppBrowserSession } from "../session/AppSession";
 import type { IEventService } from "../service/EventService";
 import type { IRSVPService } from "../service/RSVPService";
 import type { EventError } from "../service/errors";
@@ -33,6 +30,14 @@ export interface IEventController {
     userId: string,
     session: IAppBrowserSession
   ): Promise<void>;
+
+  showEventDetail(
+    res: Response,
+    eventId: number,
+    actor: { userId: string; role: UserRole },
+    session: IAppBrowserSession,
+  ): Promise<void>;
+
   showEditEventForm(
     res: Response,
     eventId: number,
@@ -128,6 +133,41 @@ class EventController implements IEventController {
     });
   }
 
+  async showEventDetail(
+    res: Response,
+    eventId: number,
+    actor: { userId: string; role: UserRole },
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    this.logger.info(`Showing event detail for event ${eventId}`);
+
+    const result = await this.eventService.getEventById(eventId, actor);
+
+    if (!result.ok && this.isEventError(result.value)) {
+      const error = result.value;
+      const status = this.mapErrorStatus(error);
+      res.status(status).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    if (!result.ok) {
+      res.status(500).render("partials/error", {
+        message: "Unable to load event.",
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/show", {
+      session,
+      event: result.value,
+      pageError: null,
+    });
+  }
+
   async showNewEventForm(
     res: Response,
     session: IAppBrowserSession,
@@ -210,7 +250,10 @@ class EventController implements IEventController {
       return;
     }
 
-    const result = await this.eventService.getEventById(eventId);
+    const result = await this.eventService.getEventById(eventId, {
+      userId: actingUserId,
+      role: actingUserRole,
+    });
     if (!result.ok) {
       res.status(404).render("partials/error", {
         message: `Event ${eventId} not found.`,
