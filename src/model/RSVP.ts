@@ -3,14 +3,14 @@ export type RSVPStatus = "going" | "waitlisted" | "cancelled";
 export interface IRSVP {
     id: number;
     eventId: number;
-    userId: number;
+    userId: string;
     status: "going" | "waitlisted" | "cancelled";
     createdAt: Date; // Determines waitlist order
 }
 
 export interface CreateRSVPData {
     eventId: number;
-    userId: number;
+    userId: string;
     status?: "going" | "waitlisted" | "cancelled";
     createdAt?: Date;
 }
@@ -26,7 +26,7 @@ function normalizeRSVPStatus(status: RSVPStatus | undefined): RSVPStatus {
 export class RSVP implements IRSVP {
     id: number;
     eventId: number;
-    userId: number;
+    userId: string;
     status: "going" | "waitlisted" | "cancelled";
     createdAt: Date;
 
@@ -46,7 +46,7 @@ export function createRSVP(id: number, data: CreateRSVPData): IRSVP {
 export function toRSVP(model: {
     id: number;
     eventId: number;
-    userId: number;
+    userId: string;
     status: "going" | "waitlisted" | "cancelled";
     createdAt: Date;
 }): IRSVP {
