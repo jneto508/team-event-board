@@ -386,7 +386,7 @@ class ExpressApp implements IApp {
                     return;
                 }
 
-                const eventId = parseInt(req.params.id, 10);
+                const eventId = parseInt(String(req.params.id), 10);
                 if (isNaN(eventId)) {
                     res.status(400).render("partials/error", {
                         message: "Invalid event ID.",
@@ -416,7 +416,7 @@ class ExpressApp implements IApp {
                     return;
                 }
 
-                const eventId = parseInt(req.params.id, 10);
+                const eventId = parseInt(String(req.params.id), 10);
                 if (isNaN(eventId)) {
                     res.status(400).render("partials/error", {
                         message: "Invalid event ID.",
