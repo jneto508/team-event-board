@@ -133,6 +133,68 @@ class EventController implements IEventController {
     
     res.redirect("/home");
   }
+
+  async showEditEventForm(
+    res: Response,
+    eventId: number,
+    actingUserId: string,
+    actingUserRole: UserRole,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    this.logger.info(`Showing edit form for event ${eventId}`);
+
+    if (actingUserRole === "user") {
+      res.status(403).render("partials/error", {
+        message: "Members are not allowed to edit events.",
+        layout: false,
+      });
+      return;
+    }
+
+    const result = await this.eventService.getEventById(eventId);
+    if (!result.ok) {
+      res.status(404).render("partials/error", {
+        message: `Event ${eventId} not found.`,
+        layout: false,
+      });
+      return;
+    }
+
+    const event = result.value;
+
+    if (event.status === "cancelled" || event.status === "past") {
+      res.status(403).render("partials/error", {
+        message: "Cannot edit a cancelled or past event.",
+        layout: false,
+      });
+      return;
+    }
+
+    if (actingUserRole === "staff" && event.organizerId !== actingUserId) {
+      res.status(403).render("partials/error", {
+        message: "You can only edit events you organized.",
+        layout: false,
+      });
+      return;
+    }
+
+    const pad = (d: Date) => d.toISOString().slice(0, 16);
+
+    res.render("events/edit", {
+      session,
+      pageError: null,
+      eventId,
+      formValues: {
+        title: event.title,
+        description: event.description,
+        location: event.location,
+        category: event.category,
+        capacity: event.capacity > 0 ? String(event.capacity) : "",
+        startDateTime: pad(event.startDateTime),
+        endDateTime: pad(event.endDateTime),
+      },
+    });
+  }
 }
 
 export function CreateEventController(
