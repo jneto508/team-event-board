@@ -168,6 +168,9 @@ export class EventService implements IEventService {
     }
     
     async searchEvents(query: string): Promise<Result<IEvent[], EventError>> {
+        const result = await this.repository.getAllEvents();
+    
+        if (!result.ok) {
         const archiveResult = await this.archiveExpiredEvents();
         if (archiveResult.ok === false) {
             return Err(archiveResult.value);
@@ -204,6 +207,7 @@ export class EventService implements IEventService {
         });
     
         return Ok(filtered);
+      }
     }
 
     async getArchivedEvents(
