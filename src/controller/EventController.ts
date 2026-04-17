@@ -1,5 +1,8 @@
 import type { Response } from "express";
-import type { IAppBrowserSession } from "../session/AppSession";
+import type {
+  IAppBrowserSession,
+  IAuthenticatedUserSession,
+} from "../session/AppSession";
 import type { IEventService } from "../service/EventService";
 import type { IRSVPService } from "../service/RSVPService";
 import type { EventError } from "../service/errors";
@@ -371,11 +374,19 @@ class EventController implements IEventController {
 
     const result = await this.eventService.getArchivedEvents(category);
 
-    if (!result.ok) {
+    if (!result.ok && this.isEventError(result.value)) {
       const error = result.value;
       const status = this.mapErrorStatus(error);
       res.status(status).render("partials/error", {
         message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    if (!result.ok) {
+      res.status(500).render("partials/error", {
+        message: "Unable to load archived events.",
         layout: false,
       });
       return;
