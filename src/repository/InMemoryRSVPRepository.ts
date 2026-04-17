@@ -9,7 +9,7 @@ import {
     InvalidRSVPData,
     RSVPError,
     RSVPNotFound,
-    UnexpectedDependencyError,
+    RSVPUnexpectedDependencyError,
 } from "../service/errors";
 
 class InMemoryRSVPRepository implements IRSVPRepository {
@@ -50,7 +50,7 @@ class InMemoryRSVPRepository implements IRSVPRepository {
             this.rsvps.push(rsvp);
             return Ok(rsvp);
         } catch {
-            return Err(UnexpectedDependencyError("Failed to create RSVP."));
+            return Err(RSVPUnexpectedDependencyError("Failed to create RSVP."));
         }
     }
 
@@ -63,7 +63,7 @@ class InMemoryRSVPRepository implements IRSVPRepository {
             return Ok(rsvp);
         } catch {
             return Err(
-                UnexpectedDependencyError("Failed to retrieve RSVP."),
+                RSVPUnexpectedDependencyError("Failed to retrieve RSVP."),
             );
         }
     }
@@ -84,7 +84,7 @@ class InMemoryRSVPRepository implements IRSVPRepository {
             return Ok(rsvp);
         } catch {
             return Err(
-                UnexpectedDependencyError("Failed to retrieve RSVP."),
+                RSVPUnexpectedDependencyError("Failed to retrieve RSVP."),
             );
         }
     }
@@ -93,7 +93,7 @@ class InMemoryRSVPRepository implements IRSVPRepository {
         try {
             return Ok([...this.rsvps]);
         } catch {
-            return Err(UnexpectedDependencyError("Failed to list RSVPs."));
+            return Err(RSVPUnexpectedDependencyError("Failed to list RSVPs."));
         }
     }
 
@@ -111,7 +111,7 @@ class InMemoryRSVPRepository implements IRSVPRepository {
             return Ok(filtered.filter((rsvp) => rsvp.status === filterStatus));
         } catch {
             return Err(
-                UnexpectedDependencyError("Failed to list event RSVPs."),
+                RSVPUnexpectedDependencyError("Failed to list event RSVPs."),
             );
         }
     }
@@ -130,7 +130,7 @@ class InMemoryRSVPRepository implements IRSVPRepository {
             return Ok(filtered.filter((rsvp) => rsvp.status === filterStatus));
         } catch {
             return Err(
-                UnexpectedDependencyError("Failed to list user RSVPs."),
+                RSVPUnexpectedDependencyError("Failed to list user RSVPs."),
             );
         }
     }
@@ -148,7 +148,7 @@ class InMemoryRSVPRepository implements IRSVPRepository {
             rsvp.status = status;
             return Ok(rsvp);
         } catch {
-            return Err(UnexpectedDependencyError("Failed to update RSVP."));
+            return Err(RSVPUnexpectedDependencyError("Failed to update RSVP."));
         }
     }
 }
