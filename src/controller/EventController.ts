@@ -27,7 +27,16 @@ export interface IEventController {
     session: IAppBrowserSession,
   ): Promise<void>;
   toggleSave(res: Response, eventId: number, userId: string): Promise<void>;
-
+  toggleRSVP(
+    res: Response,
+    eventId: number,
+    currentUser: IAuthenticatedUserSession
+  ): Promise<void>;
+  showArchivePage(
+    res: Response,
+    session: IAppBrowserSession,
+    category?: string,
+  ): Promise<void>;
   showSavedEvents(
     res: Response,
     userId: string,
@@ -308,6 +317,64 @@ class EventController implements IEventController {
     }
 
     res.redirect("/home");
+  }
+
+  async showArchivePage(
+    res: Response,
+    session: IAppBrowserSession,
+    category?: string,
+  ): Promise<void> {
+    this.logger.info("Showing archived events page");
+
+    const result = await this.eventService.getArchivedEvents(category);
+
+    if (!result.ok) {
+      const error = result.value;
+      const status = this.mapErrorStatus(error);
+      res.status(status).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    const categories = Array.from(
+      new Set(result.value.map((event) => event.category)),
+    ).sort();
+
+    res.render("events/archive", {
+      session,
+      pageError: null,
+      events: result.value,
+      categories,
+      selectedCategory: String(category ?? "").trim().toLowerCase(),
+    });
+  }
+
+  async toggleRSVP(
+    res: Response,
+    eventId: number,
+    currentUser: IAuthenticatedUserSession,
+  ): Promise<void> {
+    this.logger.info(`Toggling RSVP for event ${eventId}`);
+
+    const result = await this.rsvpService.toggleRSVP(eventId, currentUser);
+    if (result.ok === false) {
+      const error = result.value;
+      const status =
+        error.name === "EventNotFound"
+          ? 404
+          : error.name === "UnexpectedDependencyError"
+            ? 500
+            : 400;
+
+      res.status(status).json({
+        error: error.message,
+      });
+      return;
+    }
+
+    res.json(result.value);
   }
 }
 

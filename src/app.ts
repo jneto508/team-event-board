@@ -676,6 +676,54 @@ class ExpressApp implements IApp {
             }),
         );
 
+        this.app.get(
+            "/events/archive",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                await this.eventController.showArchivePage(
+                    res,
+                    recordPageView(sessionStore(req)),
+                    typeof req.query.category === "string"
+                        ? req.query.category
+                        : undefined,
+                );
+            }),
+        );
+
+        this.app.post(
+            "/events/:id/rsvp-toggle",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                const eventId = Number(req.params.id);
+                if (!Number.isInteger(eventId) || eventId <= 0) {
+                    res.status(400).json({
+                        error: "A valid event id is required.",
+                    });
+                    return;
+                }
+
+                const currentUser = getAuthenticatedUser(sessionStore(req));
+                if (!currentUser) {
+                    res.status(401).json({
+                        error: "Please log in to continue.",
+                    });
+                    return;
+                }
+
+                await this.eventController.toggleRSVP(
+                    res,
+                    eventId,
+                    currentUser,
+                );
+            }),
+        );
+
         // ── Error handler ────────────────────────────────────────────────
 
         this.app.use(
