@@ -1,7 +1,14 @@
 import { Err, Ok, type Result } from "../lib/result";
 import { createComment, type IComment } from "../model/Comment";
-import { createEvent, updateEvent, type IEvent } from "../model/Event";
+import {
+  createEvent,
+  updateEvent,
+  type EventStatus,
+  type IEvent,
+} from "../model/Event";
 import { createRSVP, type IRSVP, type RSVPStatus } from "../model/RSVP";
+
+
 import type {
   CreateCommentInput,
   CreateEventInput,
@@ -239,6 +246,23 @@ class InMemoryEventRepository
     }
   }
 
+  async updateEventStatus(
+    id: number,
+    status: EventStatus,
+  ): Promise<Result<void, EventError>> {
+    try {
+      const event = this.events.find((candidate) => candidate.id === id);
+      if (!event) {
+        return Err(EventNotFound(`Event ${id} was not found.`));
+      }
+
+      updateEvent(event, { status });
+      return Ok(undefined);
+    } catch {
+      return Err(UnexpectedEventDependencyError("Failed to update event status."));
+    }
+  }
+
   async createRSVP(data: CreateRSVPInput): Promise<Result<IRSVP, RSVPError>> {
     try {
       const rsvp = createRSVP(this.nextRsvpId++, data);
@@ -313,6 +337,23 @@ class InMemoryEventRepository
       );
     } catch {
       return Err(UnexpectedRsvpDependencyError("Unable to list user RSVPs."));
+    }
+  }
+
+  async updateRSVPStatus(
+    id: number,
+    status: RSVPStatus,
+  ): Promise<Result<IRSVP, RSVPError>> {
+    try {
+      const rsvp = this.rsvps.find((candidate) => candidate.id === id);
+      if (!rsvp) {
+        return Err(RSVPNotFound(`RSVP ${id} was not found.`));
+      }
+
+      rsvp.status = status;
+      return Ok(rsvp);
+    } catch {
+      return Err(UnexpectedRsvpDependencyError("Unable to update RSVP."));
     }
   }
 

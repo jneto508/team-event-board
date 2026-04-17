@@ -411,10 +411,26 @@ class ExpressApp implements IApp {
                     return;
                 }
 
-                await this.eventCommentsController.showEventDetail(
-                    res,
+                const eventId = Number.parseInt(
                     typeof req.params.eventId === "string" ? req.params.eventId : "",
-                    currentUser.userId,
+                    10,
+                );
+
+                if (Number.isNaN(eventId)) {
+                    res.status(400).render("partials/error", {
+                        message: "Invalid event ID.",
+                        layout: false,
+                    });
+                    return;
+                }
+
+                await this.eventController.showEventDetail(
+                    res,
+                    eventId,
+                    {
+                        userId: currentUser.userId,
+                        role: currentUser.role,
+                    },
                     browserSession,
                 );
             }),
@@ -672,6 +688,54 @@ class ExpressApp implements IApp {
                     user.userId,
                     user.role,
                     touchAppSession(store),
+                );
+            }),
+        );
+
+        this.app.get(
+            "/events/archive",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                await this.eventController.showArchivePage(
+                    res,
+                    recordPageView(sessionStore(req)),
+                    typeof req.query.category === "string"
+                        ? req.query.category
+                        : undefined,
+                );
+            }),
+        );
+
+        this.app.post(
+            "/events/:id/rsvp-toggle",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                const eventId = Number(req.params.id);
+                if (!Number.isInteger(eventId) || eventId <= 0) {
+                    res.status(400).json({
+                        error: "A valid event id is required.",
+                    });
+                    return;
+                }
+
+                const currentUser = getAuthenticatedUser(sessionStore(req));
+                if (!currentUser) {
+                    res.status(401).json({
+                        error: "Please log in to continue.",
+                    });
+                    return;
+                }
+
+                await this.eventController.toggleRSVP(
+                    res,
+                    eventId,
+                    currentUser,
                 );
             }),
         );
