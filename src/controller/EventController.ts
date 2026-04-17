@@ -390,7 +390,7 @@ class EventController implements IEventController {
         layout: false,
       });
       return;
-}
+    }
 
     const categories = Array.from(
       new Set(result.value.map((event) => event.category)),
