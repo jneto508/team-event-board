@@ -411,10 +411,26 @@ class ExpressApp implements IApp {
                     return;
                 }
 
-                await this.eventCommentsController.showEventDetail(
-                    res,
+                const eventId = Number.parseInt(
                     typeof req.params.eventId === "string" ? req.params.eventId : "",
-                    currentUser.userId,
+                    10,
+                );
+
+                if (Number.isNaN(eventId)) {
+                    res.status(400).render("partials/error", {
+                        message: "Invalid event ID.",
+                        layout: false,
+                    });
+                    return;
+                }
+
+                await this.eventController.showEventDetail(
+                    res,
+                    eventId,
+                    {
+                        userId: currentUser.userId,
+                        role: currentUser.role,
+                    },
                     browserSession,
                 );
             }),
