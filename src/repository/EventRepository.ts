@@ -56,8 +56,6 @@ export interface IEventRepository {
 export interface IRSVPRepository {
     createRSVP(data: CreateRSVPInput): Promise<Result<IRSVP, RSVPError>>;
     getRSVPById(id: number): Promise<Result<IRSVP, RSVPError>>;
-    getRSVPByEventAndUser(eventId: number, userId: string): Promise<Result<IRSVP, RSVPError>>;
-    updateRSVPStatus(id: number, status: RSVPStatus): Promise<Result<IRSVP, RSVPError>>;
     getRSVPByEventAndUser(
         eventId: number,
         userId: string,
