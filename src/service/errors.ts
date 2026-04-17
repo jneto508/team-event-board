@@ -39,6 +39,11 @@ export const UnexpectedDependencyError = (message: string): EventError => ({
     message
 });
 
+export const RSVPUnexpectedDependencyError = (message: string): RSVPError => ({
+    name: "UnexpectedDependencyError",
+    message
+});
+
 export const Forbidden = (message: string): EventError => ({
     name: "Forbidden",
     message
