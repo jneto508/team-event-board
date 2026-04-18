@@ -16,7 +16,21 @@
 <% if (pageError) { %>
   <%- include("partials/error", { message: pageError }) %>
 <% } %>
-
+<form method="GET" action="/events/search" class="mb-4 flex gap-2">
+  <input 
+  type="text" 
+  name="q" 
+  placeholder="Search events..."
+  value="<%= typeof query !== 'undefined' ? query : '' %>"
+  class="px-3 py-2 border border-slate-300 rounded-lg w-full"
+/>
+  <button 
+    type="submit"
+    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+  >
+    Search
+  </button>
+</form>
 <section class="mb-5 max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
   <div class="flex items-center justify-between mb-4">
     <h2 class="text-xl font-semibold">Published Events</h2>
@@ -27,9 +41,10 @@
       + Create Event
     </a>
   </div>
-  <% if (publishedEvents && publishedEvents.length > 0) { %>
+  <% const eventsToShow = typeof events !== 'undefined' ? events : publishedEvents; %>
+  <% if (eventsToShow && eventsToShow.length > 0) { %>
     <div class="grid gap-4">
-      <% publishedEvents.forEach((event) => { %>
+      <% eventsToShow.forEach((event) => { %>
         <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
           <div class="flex items-start justify-between gap-4">
             <div>
@@ -48,7 +63,7 @@
       <% }) %>
     </div>
   <% } else { %>
-    <p class="text-slate-500 text-sm">No published events yet. Create one to get started.</p>
+    <p class="text-slate-500 text-sm">No events found. Create one to get started.</p>
   <% } %>
 </section>
 
