@@ -13,6 +13,13 @@
   <% } %>
 </section>
 
+<a 
+  href="/users/<%= session.authenticatedUser.userId %>/saved-events"
+  class="text-blue-600 hover:underline text-sm"
+>
+  Saved Events
+</a>
+
 <% if (pageError) { %>
   <%- include("partials/error", { message: pageError }) %>
 <% } %>
@@ -33,17 +40,22 @@
         <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h3 class="text-lg font-semibold text-slate-900 mb-1"><%= event.title %></h3>
-              <p class="text-slate-500 text-sm mb-2"><%= event.location %> · <%= event.category %></p>
-              <p class="text-slate-600 text-sm mb-0"><%= event.description %></p>
+              <h3><%= event.title %></h3>
+              <p><%= event.location %> · <%= event.category %></p>
+              <p><%= event.description %></p>
             </div>
-            <a
-              href="/events/<%= event.id %>"
-              class="px-3.5 py-2 rounded-lg bg-white text-blue-700 border border-slate-200 no-underline hover:bg-blue-50 text-sm font-medium whitespace-nowrap"
-            >
-              View Event
-            </a>
+          
+            <a href="/events/<%= event.id %>">View Event</a>
           </div>
+          
+          <form method="POST" action="/events/<%= event.id %>/save" class="mt-2">
+            <button 
+              type="submit"
+              class="px-3 py-1 bg-slate-200 rounded hover:bg-slate-300 text-sm"
+            >
+              Save / Unsave
+            </button>
+          </form>
         </article>
       <% }) %>
     </div>
