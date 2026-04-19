@@ -121,9 +121,7 @@ class EventController implements IEventController {
       return;
     }
   
-    res.json({
-      status: result.value,
-    });
+    res.redirect("/home");
   }
 
   async showSavedEvents(
