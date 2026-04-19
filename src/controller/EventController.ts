@@ -42,7 +42,11 @@ export interface IEventController {
     userId: string,
     session: IAppBrowserSession
   ): Promise<void>;
-
+  searchEvents(
+    res: Response,
+    query: string,
+    session: IAppBrowserSession
+  ): Promise<void>;
   showEventDetail(
     res: Response,
     eventId: number,
@@ -144,7 +148,30 @@ class EventController implements IEventController {
       events: result.value,
     });
   }
-
+  async searchEvents(
+    res: Response,
+    query: string,
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    this.logger.info("Searching events");
+  
+    const result = await this.eventService.searchEvents(query);
+  
+    if (!result.ok) {
+      res.status(500).render("partials/error", {
+        message: "Unable to search events.",
+        layout: false,
+      });
+      return;
+    }
+  
+    res.render("home", {
+      session,
+      events: result.value,
+      query,
+      pageError: null,
+    });
+  }
   async showEventDetail(
     res: Response,
     eventId: number,
