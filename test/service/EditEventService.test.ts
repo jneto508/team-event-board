@@ -57,9 +57,50 @@ describe("EventService.updateEvent", () => {
         }
     });
 
-    it("returns invalid state when the event is past", async () => {});
+    it("returns invalid state when the event is past", async () => {
+        const service = CreateEventService(CreateInMemoryEventRepository());
 
-    it("returns invalid input when required fields are missing or empty", async () => {});
+        const result = await service.updateEvent(3, VALID_UPDATE, "user-admin", "admin");
 
-    it("returns invalid input when start date is after end date", async () => {});
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidEventState");
+        }
+    });
+
+    it("returns invalid input when required fields are missing or empty", async () => {
+        const service = CreateEventService(CreateInMemoryEventRepository());
+
+        const result = await service.updateEvent(
+            1,
+            {...VALID_UPDATE, title: ""},
+            "user-staff",
+            "staff",
+        );
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidEventData");
+        }
+    });
+
+    it("returns invalid input when start date is after end date", async () => {
+        const service = CreateEventService(CreateInMemoryEventRepository());
+
+        const result = await service.updateEvent(
+            1,
+            {
+                ...VALID_UPDATE,
+                startDateTime: new Date("2026-06-01T21:00:00.000Z"),
+                endDateTime: new Date("2026-06-01T18:00:00.000Z"),
+            },
+            "user-staff",
+            "staff",
+        );
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.value.name).toBe("InvalidEventData");
+        }
+    });
 });
