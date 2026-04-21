@@ -27,32 +27,7 @@ export class RSVPService implements IRSVPService {
         private readonly eventRepository: IEventRepository,
         private readonly rsvpRepository: IRSVPRepository,
     ) {}
-
-    private async archiveExpiredEvents(now: Date): Promise<Result<void, EventError>> {
-        const eventsResult = await this.eventRepository.getAllEvents();
-        if (eventsResult.ok === false) {
-            return Err(eventsResult.value);
-        }
-
-        for (const event of eventsResult.value) {
-            if (event.status === "past" || event.status === "cancelled") {
-                continue;
-            }
-
-            if (event.endDateTime <= now) {
-                const updated = await this.eventRepository.updateEventStatus(
-                    event.id,
-                    "past",
-                );
-                if (updated.ok === false) {
-                    return Err(updated.value);
-                }
-            }
-        }
-
-        return Ok(undefined);
-    }
-
+    
     private validateEligibility(
         event: IEvent,
         user: IAuthenticatedUserSession,
@@ -132,11 +107,6 @@ export class RSVPService implements IRSVPService {
         user: IAuthenticatedUserSession,
     ): Promise<Result<ToggleRSVPResult, ToggleRSVPError>> {
         const now = new Date();
-
-        const archiveResult = await this.archiveExpiredEvents(now);
-        if (archiveResult.ok === false) {
-            return Err(archiveResult.value);
-        }
 
         const eventResult = await this.eventRepository.getEventById(eventId);
         if (eventResult.ok === false) {
