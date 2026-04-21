@@ -37,6 +37,11 @@ export function createComposedApp(logger?: ILoggingService): IApp {
     const eventRepository = CreateInMemoryEventRepository();
     const savedEventRepository = CreateInMemorySavedEventRepository();
 
+    // Event wiring
+    const eventService = CreateEventService(eventRepository);
+    const rsvpService = CreateRSVPService(eventRepository, eventRepository);
+    const savedEventService = new SavedEventService(savedEventRepository, eventRepository);
+
     // RSVP dashboard wiring
     const memberRsvpsDashboardService = CreateMemberRsvpsDashboardService(
         eventRepository,
@@ -44,6 +49,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
     );
     const memberRsvpsDashboardController = CreateMemberRsvpsDashboardController(
         memberRsvpsDashboardService,
+        rsvpService,
         resolvedLogger,
     );
 

@@ -48,8 +48,8 @@ const DEMO_EVENTS: IEvent[] = [
     category: "technology",
     status: "published",
     capacity: 40,
-    startDateTime: new Date("2026-05-01T18:00:00.000Z"),
-    endDateTime: new Date("2026-05-01T21:00:00.000Z"),
+    startDateTime: new Date("2026-05-15T18:00:00.000Z"),
+    endDateTime: new Date("2026-05-15T21:00:00.000Z"),
     organizerId: "user-staff",
     createdAt: new Date("2026-03-10T15:00:00.000Z"),
     updatedAt: new Date("2026-03-10T15:00:00.000Z"),
@@ -61,8 +61,8 @@ const DEMO_EVENTS: IEvent[] = [
     category: "design",
     status: "published",
     capacity: 18,
-    startDateTime: new Date("2026-04-20T22:00:00.000Z"),
-    endDateTime: new Date("2026-04-21T00:00:00.000Z"),
+    startDateTime: new Date("2026-05-01T22:00:00.000Z"),
+    endDateTime: new Date("2026-05-02T00:00:00.000Z"),
     organizerId: "user-reader",
     createdAt: new Date("2026-03-12T16:00:00.000Z"),
     updatedAt: new Date("2026-03-12T16:00:00.000Z"),
@@ -80,6 +80,19 @@ const DEMO_EVENTS: IEvent[] = [
     createdAt: new Date("2026-02-20T14:00:00.000Z"),
     updatedAt: new Date("2026-03-16T01:30:00.000Z"),
   }),
+  createEvent(4, {
+    title: "Community Picnic",
+    description: "Outdoor meetup for members and guests.",
+    location: "Riverside Park",
+    category: "community",
+    status: "cancelled",
+    capacity: 80,
+    startDateTime: new Date("2026-04-05T16:00:00.000Z"),
+    endDateTime: new Date("2026-04-05T19:00:00.000Z"),
+    organizerId: "user-staff",
+    createdAt: new Date("2026-02-25T14:00:00.000Z"),
+    updatedAt: new Date("2026-04-01T13:00:00.000Z"),
+  }),
 ];
 
 const DEMO_RSVPS: IRSVP[] = [
@@ -94,6 +107,18 @@ const DEMO_RSVPS: IRSVP[] = [
     userId: "user-reader",
     status: "waitlisted",
     createdAt: new Date("2026-03-21T10:00:00.000Z"),
+  }),
+  createRSVP(3, {
+    eventId: 3,
+    userId: "user-reader",
+    status: "going",
+    createdAt: new Date("2026-03-01T10:00:00.000Z"),
+  }),
+  createRSVP(4, {
+    eventId: 4,
+    userId: "user-reader",
+    status: "going",
+    createdAt: new Date("2026-03-05T10:00:00.000Z"),
   }),
 ];
 

@@ -45,7 +45,25 @@ describe("GET /my-rsvps", () => {
     expect(response.text).toContain("Only members can view My RSVPs.");
   });
 
-  it("lets a signed-in member cancel an upcoming RSVP from the dashboard", async () => {
+  it("blocks organizers from the inline dashboard cancel action", async () => {
+    const app = createComposedApp().getExpressApp();
+    const agent = request.agent(app);
+
+    await agent.post("/login").type("form").send({
+      email: "staff@app.test",
+      password: "password123",
+    });
+
+    const response = await agent
+      .post("/events/1/rsvp-toggle")
+      .set("HX-Request", "true")
+      .set("HX-Target", "rsvp-dashboard-sections");
+
+    expect(response.status).toBe(403);
+    expect(response.text).toContain("Only members can manage My RSVPs.");
+  });
+
+  it("updates the dashboard inline when a member cancels an upcoming RSVP", async () => {
     const app = createComposedApp().getExpressApp();
     const agent = request.agent(app);
 
@@ -54,13 +72,16 @@ describe("GET /my-rsvps", () => {
       password: "password123",
     });
 
-    const cancelResponse = await agent.post("/my-rsvps/1/cancel");
-    expect(cancelResponse.status).toBe(302);
-    expect(cancelResponse.headers.location).toBe("/my-rsvps");
+    const cancelResponse = await agent
+      .post("/events/1/rsvp-toggle")
+      .set("HX-Request", "true")
+      .set("HX-Target", "rsvp-dashboard-sections");
 
-    const dashboardResponse = await agent.get("/my-rsvps");
-    expect(dashboardResponse.status).toBe(200);
-    expect(dashboardResponse.text).toContain("Cancel RSVP");
-    expect(dashboardResponse.text).toContain("Spring Hack Night");
+    expect(cancelResponse.status).toBe(200);
+    expect(cancelResponse.text).toContain('id="rsvp-dashboard-sections"');
+    expect(cancelResponse.text).toContain("Spring Hack Night");
+    expect(cancelResponse.text).toContain("cancelled");
+    expect(cancelResponse.text).toContain("Design Critique Circle");
+    expect(cancelResponse.text).toContain("Cancel RSVP");
   });
 });
