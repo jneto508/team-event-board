@@ -75,8 +75,15 @@
       RSVP placeholder
     </div>
     <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-      <!-- Feature 12: attendee list goes here -->
-      Attendee list placeholder
+      <!-- Feature 12: attendee list entry point -->
+      <p class="mb-2 font-medium text-slate-700">Attendee List</p>
+      <p class="mb-3 text-slate-500">View the grouped attendee list for this event.</p>
+      <a
+        href="/events/<%= event.id %>/attendees"
+        class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-blue-700 no-underline hover:bg-blue-50"
+      >
+        View Attendee List
+      </a>
     </div>
   </div>
 </section>
