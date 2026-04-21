@@ -17,6 +17,7 @@ import { SavedEventService } from "./service/SavedEventService";
 import { CreateEventController } from "./controller/EventController";
 import { CreateEventCommentsService } from "./service/EventCommentsService";
 import { CreateEventCommentsController } from "./controller/EventCommentsController";
+import { CreateAttendeeListService } from "./service/AttendeeListService";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
     const resolvedLogger = logger ?? CreateLoggingService();
@@ -50,10 +51,16 @@ export function createComposedApp(logger?: ILoggingService): IApp {
     const eventService = CreateEventService(eventRepository);
     const rsvpService = CreateRSVPService(eventRepository, eventRepository);
     const savedEventService = new SavedEventService(savedEventRepository, eventRepository);
+    const attendeeListService = CreateAttendeeListService(
+        eventRepository,
+        eventRepository,
+        authUsers,
+    );
     const eventController = CreateEventController(
         eventService,
         savedEventService,
         rsvpService,
+        attendeeListService,
         resolvedLogger,
     );
 
