@@ -732,15 +732,41 @@ class ExpressApp implements IApp {
         this.app.post(
             "/events/:id/rsvp-toggle",
             asyncHandler(async (req, res) => {
-                if (!this.requireAuthenticated(req, res)) {
-                    return;
-                }
-
                 const eventId = Number(req.params.id);
                 if (!Number.isInteger(eventId) || eventId <= 0) {
                     res.status(400).json({
                         error: "A valid event id is required.",
                     });
+                    return;
+                }
+
+                if (
+                    this.isHtmxRequest(req) &&
+                    req.get("HX-Target") === "rsvp-dashboard-sections"
+                ) {
+                    if (!this.requireRole(req, res, ["user"], "Only members can manage My RSVPs.")) {
+                        return;
+                    }
+
+                    const currentUser = getAuthenticatedUser(sessionStore(req));
+                    if (!currentUser) {
+                        res.status(401).render("partials/error", {
+                            message: AuthenticationRequired("Please log in to continue.").message,
+                            layout: false,
+                        });
+                        return;
+                    }
+
+                    await this.memberRsvpsDashboardController.toggleRsvpInline(
+                        res,
+                        currentUser,
+                        eventId,
+                        touchAppSession(sessionStore(req)),
+                    );
+                    return;
+                }
+
+                if (!this.requireAuthenticated(req, res)) {
                     return;
                 }
 

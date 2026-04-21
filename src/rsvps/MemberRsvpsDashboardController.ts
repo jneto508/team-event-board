@@ -1,10 +1,14 @@
 import type { Response } from "express";
-import type { IAppBrowserSession } from "../session/AppSession";
+import type {
+  IAppBrowserSession,
+  IAuthenticatedUserSession,
+} from "../session/AppSession";
 import type { ILoggingService } from "../service/LoggingService";
 import type {
   IMemberRsvpsDashboardService,
   MemberRsvpsDashboard,
 } from "../service/MemberRsvpsDashboardService";
+import type { IRSVPService } from "../service/RSVPService";
 
 export interface IMemberRsvpsDashboardController {
   showDashboard(
@@ -18,11 +22,18 @@ export interface IMemberRsvpsDashboardController {
     eventId: number,
     session: IAppBrowserSession,
   ): Promise<void>;
+  toggleRsvpInline(
+    res: Response,
+    currentUser: IAuthenticatedUserSession,
+    eventId: number,
+    session: IAppBrowserSession,
+  ): Promise<void>;
 }
 
 class MemberRsvpsDashboardController implements IMemberRsvpsDashboardController {
   constructor(
     private readonly service: IMemberRsvpsDashboardService,
+    private readonly rsvpService: IRSVPService,
     private readonly logger: ILoggingService,
   ) {}
 
@@ -44,6 +55,20 @@ class MemberRsvpsDashboardController implements IMemberRsvpsDashboardController 
       session,
       upcoming: dashboard.upcoming,
       history: dashboard.history,
+    });
+  }
+
+  private async renderDashboardSections(
+    res: Response,
+    userId: string,
+    pageError: string | null = null,
+  ): Promise<void> {
+    const dashboardResult = await this.service.getMemberRsvpsDashboard(userId);
+    res.render("rsvps/partials/dashboard_sections", {
+      layout: false,
+      pageError,
+      upcoming: dashboardResult.ok ? dashboardResult.value.upcoming : [],
+      history: dashboardResult.ok ? dashboardResult.value.history : [],
     });
   }
 
@@ -98,11 +123,45 @@ class MemberRsvpsDashboardController implements IMemberRsvpsDashboardController 
     this.logger.info(`Cancelled RSVP for user ${userId} on event ${eventId}`);
     res.redirect("/my-rsvps");
   }
+
+  async toggleRsvpInline(
+    res: Response,
+    currentUser: IAuthenticatedUserSession,
+    eventId: number,
+    _session: IAppBrowserSession,
+  ): Promise<void> {
+    const result = await this.rsvpService.toggleRSVP(eventId, currentUser);
+    if (result.ok === false) {
+      const error = result.value;
+      const status =
+        error.name === "EventNotFound"
+          ? 404
+          : error.name === "UnexpectedDependencyError"
+            ? 500
+            : 400;
+
+      if (status >= 500) {
+        this.logger.error(`Unable to toggle RSVP from dashboard: ${error.message}`);
+      } else {
+        this.logger.warn(`Dashboard RSVP toggle blocked: ${error.message}`);
+      }
+
+      res.status(status);
+      await this.renderDashboardSections(res, currentUser.userId, error.message);
+      return;
+    }
+
+    this.logger.info(
+      `Toggled RSVP for user ${currentUser.userId} on event ${eventId} from dashboard`,
+    );
+    await this.renderDashboardSections(res, currentUser.userId);
+  }
 }
 
 export function CreateMemberRsvpsDashboardController(
   service: IMemberRsvpsDashboardService,
+  rsvpService: IRSVPService,
   logger: ILoggingService,
 ): IMemberRsvpsDashboardController {
-  return new MemberRsvpsDashboardController(service, logger);
+  return new MemberRsvpsDashboardController(service, rsvpService, logger);
 }
