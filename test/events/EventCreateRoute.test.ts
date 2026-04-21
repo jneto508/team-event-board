@@ -12,16 +12,56 @@ const VALID_EVENT = {
 };
 
 async function loginAs(agent: request.Agent, email: string) {
-  await agent.post("/login").type("form").send({ email, password: "password123" });
+  await agent
+    .post("/login")
+    .type("form")
+    .send({ email, password: "password123" });
 }
 
 describe("Event creation routes", () => {
   describe("POST /events — happy path", () => {
-    it("creates an event and redirects to /home on valid input from a staff user", async () => {});
+    it("creates an event and redirects to /home on valid input from a staff user", async () => {
+      const app = createComposedApp().getExpressApp();
+      const agent = request.agent(app);
+      await loginAs(agent, "staff@app.test");
 
-    it("creates an event and redirects to /home on valid input from an admin user", async () => {});
+      const response = await agent
+        .post("/events")
+        .type("form")
+        .send(VALID_EVENT);
 
-    it("accepts an event without a capacity (optional field)", async () => {});
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toBe("/home");
+    });
+
+    it("creates an event and redirects to /home on valid input from an admin user", async () => {
+      const app = createComposedApp().getExpressApp();
+      const agent = request.agent(app);
+      await loginAs(agent, "admin@app.test");
+
+      const response = await agent
+        .post("/events")
+        .type("form")
+        .send(VALID_EVENT);
+
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toBe("/home");
+    });
+
+    it("accepts an event without a capacity (optional field)", async () => {
+      const app = createComposedApp().getExpressApp();
+      const agent = request.agent(app);
+      await loginAs(agent, "staff@app.test");
+
+      const { capacity: _, ...withoutCapacity } = VALID_EVENT;
+      const response = await agent
+        .post("/events")
+        .type("form")
+        .send(withoutCapacity);
+
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toBe("/home");
+    });
   });
 
   describe("POST /events — authentication errors", () => {
@@ -93,10 +133,16 @@ describe("Event creation routes", () => {
       const response = await agent
         .post("/events")
         .type("form")
-        .send({ ...VALID_EVENT, startDateTime: "2099-06-01T12:00", endDateTime: "2099-06-01T10:00" });
+        .send({
+          ...VALID_EVENT,
+          startDateTime: "2099-06-01T12:00",
+          endDateTime: "2099-06-01T10:00",
+        });
 
       expect(response.status).toBe(400);
-      expect(response.text).toContain("Start date/time must be before end date/time.");
+      expect(response.text).toContain(
+        "Start date/time must be before end date/time.",
+      );
     });
 
     it("returns 400 when end date equals start date", async () => {
@@ -107,10 +153,16 @@ describe("Event creation routes", () => {
       const response = await agent
         .post("/events")
         .type("form")
-        .send({ ...VALID_EVENT, startDateTime: "2099-06-01T10:00", endDateTime: "2099-06-01T10:00" });
+        .send({
+          ...VALID_EVENT,
+          startDateTime: "2099-06-01T10:00",
+          endDateTime: "2099-06-01T10:00",
+        });
 
       expect(response.status).toBe(400);
-      expect(response.text).toContain("Start date/time must be before end date/time.");
+      expect(response.text).toContain(
+        "Start date/time must be before end date/time.",
+      );
     });
 
     it("returns 400 when capacity is a negative number", async () => {
@@ -124,7 +176,9 @@ describe("Event creation routes", () => {
         .send({ ...VALID_EVENT, capacity: "-1" });
 
       expect(response.status).toBe(400);
-      expect(response.text).toContain("Capacity must be a non-negative number.");
+      expect(response.text).toContain(
+        "Capacity must be a non-negative number.",
+      );
     });
 
     it("returns 400 when startDateTime is not a valid date string", async () => {
@@ -138,7 +192,9 @@ describe("Event creation routes", () => {
         .send({ ...VALID_EVENT, startDateTime: "not-a-date" });
 
       expect(response.status).toBe(400);
-      expect(response.text).toContain("Start date/time is required and must be a valid date.");
+      expect(response.text).toContain(
+        "Start date/time is required and must be a valid date.",
+      );
     });
   });
 });
