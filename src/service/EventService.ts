@@ -5,6 +5,7 @@ import {
     InvalidEventData,
     EventNotFound,
     Forbidden,
+    InvalidSearchInput,
 } from "../service/errors";
 import {
     CreateEventInput,
@@ -201,7 +202,15 @@ export class EventService implements IEventService {
 
         const events = result.value;
         const now = new Date();
-        const q = (query || "").toLowerCase().trim();
+        if (typeof query !== "string") {
+            return Err(InvalidSearchInput("Search query must be a string."));
+          }
+          
+          if (query.length > 100) {
+            return Err(InvalidSearchInput("Search query too long."));
+          }
+          
+          const q = query.toLowerCase().trim();
 
         const publishedUpcoming = events.filter((event) => {
             return event.status === "published" && event.startDateTime > now;
