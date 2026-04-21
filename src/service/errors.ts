@@ -3,6 +3,7 @@ export type EventError =
     | {name: "InvalidEventData"; message: string}
     | {name: "ValidationError"; message: string}
     | {name: "UnexpectedDependencyError"; message: string}
+    | {name: "InvalidSearchInput"; message: string}
     | {name: "Forbidden"; message: string};
 
 export type RSVPError = 
@@ -66,6 +67,11 @@ export const CommentNotFound = (message: string): CommentError => ({
 
 export const InvalidCommentData = (message: string): CommentError => ({
     name: "InvalidCommentData",
+    message
+});
+
+export const InvalidSearchInput = (message: string): EventError => ({
+    name: "InvalidSearchInput",
     message
 });
 
