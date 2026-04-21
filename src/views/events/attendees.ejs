@@ -1,0 +1,73 @@
+
+
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <div class="flex items-start justify-between gap-4 flex-wrap">
+    <div>
+      <p class="text-sm font-semibold uppercase tracking-wide text-blue-700 mb-2">Organizer View</p>
+      <h1 class="text-3xl font-bold text-slate-900 mb-2">Attendee List</h1>
+      <p class="text-slate-500 mb-0">Grouped by RSVP status for event <span class="font-medium text-slate-700">#<%= eventId %></span></p>
+    </div>
+    <a
+      href="/events/<%= eventId %>"
+      class="px-3.5 py-2 rounded-lg bg-white text-blue-700 border border-slate-200 no-underline hover:bg-blue-50 text-sm font-medium"
+    >
+      Back to Event
+    </a>
+  </div>
+</section>
+
+<div class="grid gap-4 md:grid-cols-3">
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <h2 class="text-lg font-semibold text-slate-900 mb-1">Attending</h2>
+    <p class="text-sm text-slate-500 mb-4"><%= attendeeList.attending.length %> attendee<%= attendeeList.attending.length === 1 ? "" : "s" %></p>
+
+    <% if (attendeeList.attending.length === 0) { %>
+      <p class="text-sm text-slate-500">No attendees are currently marked as going.</p>
+    <% } else { %>
+      <ul class="space-y-3">
+        <% attendeeList.attending.forEach((attendee) => { %>
+          <li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p class="font-medium text-slate-900"><%= attendee.displayName %></p>
+            <p class="text-sm text-slate-500 mt-1">RSVPed at <%= attendee.rsvpedAt.toLocaleString() %></p>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <h2 class="text-lg font-semibold text-slate-900 mb-1">Waitlisted</h2>
+    <p class="text-sm text-slate-500 mb-4"><%= attendeeList.waitlisted.length %> attendee<%= attendeeList.waitlisted.length === 1 ? "" : "s" %></p>
+
+    <% if (attendeeList.waitlisted.length === 0) { %>
+      <p class="text-sm text-slate-500">No attendees are currently on the waitlist.</p>
+    <% } else { %>
+      <ul class="space-y-3">
+        <% attendeeList.waitlisted.forEach((attendee) => { %>
+          <li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p class="font-medium text-slate-900"><%= attendee.displayName %></p>
+            <p class="text-sm text-slate-500 mt-1">RSVPed at <%= attendee.rsvpedAt.toLocaleString() %></p>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <h2 class="text-lg font-semibold text-slate-900 mb-1">Cancelled</h2>
+    <p class="text-sm text-slate-500 mb-4"><%= attendeeList.cancelled.length %> attendee<%= attendeeList.cancelled.length === 1 ? "" : "s" %></p>
+
+    <% if (attendeeList.cancelled.length === 0) { %>
+      <p class="text-sm text-slate-500">No cancelled RSVPs for this event.</p>
+    <% } else { %>
+      <ul class="space-y-3">
+        <% attendeeList.cancelled.forEach((attendee) => { %>
+          <li class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p class="font-medium text-slate-900"><%= attendee.displayName %></p>
+            <p class="text-sm text-slate-500 mt-1">RSVPed at <%= attendee.rsvpedAt.toLocaleString() %></p>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>

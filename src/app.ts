@@ -456,6 +456,50 @@ class ExpressApp implements IApp {
             }),
         );
 
+        this.app.get(
+            "/events/:eventId/attendees",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                const browserSession = recordPageView(sessionStore(req));
+                const currentUser = getAuthenticatedUser(sessionStore(req));
+                if (!currentUser) {
+                    res.status(401).render("partials/error", {
+                        message: AuthenticationRequired(
+                            "Please log in to continue.",
+                        ).message,
+                        layout: false,
+                    });
+                    return;
+                }
+
+                const eventId = Number.parseInt(
+                    typeof req.params.eventId === "string" ? req.params.eventId : "",
+                    10,
+                );
+
+                if (Number.isNaN(eventId)) {
+                    res.status(400).render("partials/error", {
+                        message: "Invalid event ID.",
+                        layout: false,
+                    });
+                    return;
+                }
+
+                await this.eventController.showAttendeeList(
+                    res,
+                    eventId,
+                    {
+                        userId: currentUser.userId,
+                        role: currentUser.role,
+                    },
+                    browserSession,
+                );
+            }),
+        );
+
         this.app.post(
             "/events",
             asyncHandler(async (req, res) => {
@@ -732,15 +776,41 @@ class ExpressApp implements IApp {
         this.app.post(
             "/events/:id/rsvp-toggle",
             asyncHandler(async (req, res) => {
-                if (!this.requireAuthenticated(req, res)) {
-                    return;
-                }
-
                 const eventId = Number(req.params.id);
                 if (!Number.isInteger(eventId) || eventId <= 0) {
                     res.status(400).json({
                         error: "A valid event id is required.",
                     });
+                    return;
+                }
+
+                if (
+                    this.isHtmxRequest(req) &&
+                    req.get("HX-Target") === "rsvp-dashboard-sections"
+                ) {
+                    if (!this.requireRole(req, res, ["user"], "Only members can manage My RSVPs.")) {
+                        return;
+                    }
+
+                    const currentUser = getAuthenticatedUser(sessionStore(req));
+                    if (!currentUser) {
+                        res.status(401).render("partials/error", {
+                            message: AuthenticationRequired("Please log in to continue.").message,
+                            layout: false,
+                        });
+                        return;
+                    }
+
+                    await this.memberRsvpsDashboardController.toggleRsvpInline(
+                        res,
+                        currentUser,
+                        eventId,
+                        touchAppSession(sessionStore(req)),
+                    );
+                    return;
+                }
+
+                if (!this.requireAuthenticated(req, res)) {
                     return;
                 }
 

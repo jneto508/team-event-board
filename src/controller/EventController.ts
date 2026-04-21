@@ -9,6 +9,7 @@ import type { EventError } from "../service/errors";
 import type { ILoggingService } from "../service/LoggingService";
 import type { SavedEventService } from "../service/SavedEventService";
 import type { UserRole } from "../auth/User";
+import type { IAttendeeListService } from "../service/AttendeeListService";
 
 export interface IEventController {
   showNewEventForm(res: Response, session: IAppBrowserSession): Promise<void>;
@@ -54,6 +55,12 @@ export interface IEventController {
     session: IAppBrowserSession,
   ): Promise<void>;
 
+  showAttendeeList(
+    res: Response,
+    eventId: number,
+    actor: { userId: string; role: UserRole },
+    session: IAppBrowserSession,
+  ): Promise<void>;
   showEditEventForm(
     res: Response,
     eventId: number,
@@ -84,6 +91,7 @@ class EventController implements IEventController {
     private readonly eventService: IEventService,
     private readonly savedEventService: SavedEventService,
     private readonly rsvpService: IRSVPService,
+    private readonly attendeeListService: IAttendeeListService,
     private readonly logger: ILoggingService,
   ) {}
 
@@ -201,6 +209,42 @@ class EventController implements IEventController {
     res.render("events/show", {
       session,
       event: result.value,
+      pageError: null,
+    });
+  }
+
+  async showAttendeeList(
+    res: Response,
+    eventId: number,
+    actor: { userId: string; role: UserRole },
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    this.logger.info(`Showing attendee list for event ${eventId}`);
+
+    const result = await this.attendeeListService.getAttendeeList(eventId, actor);
+
+    if (!result.ok && this.isEventError(result.value)) {
+      const error = result.value;
+      const status = this.mapErrorStatus(error);
+      res.status(status).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    if (!result.ok) {
+      res.status(500).render("partials/error", {
+        message: "Unable to load attendee list.",
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/attendees", {
+      session,
+      attendeeList: result.value,
+      eventId,
       pageError: null,
     });
   }
@@ -461,7 +505,14 @@ export function CreateEventController(
   eventService: IEventService,
   savedEventService: SavedEventService,
   rsvpService: IRSVPService,
+  attendeeListService: IAttendeeListService,
   logger: ILoggingService,
 ): IEventController {
-  return new EventController(eventService, savedEventService, rsvpService, logger);
+  return new EventController(
+    eventService,
+    savedEventService,
+    rsvpService,
+    attendeeListService,
+    logger,
+  );
 }
