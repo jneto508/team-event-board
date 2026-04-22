@@ -335,6 +335,11 @@ Success Output
   value: Comment
 }
 
+Errors
+	•	InvalidCommentData
+	•	AuthorizationRequired
+	•	EventNotFound
+	•	UnexpectedDependencyError
 
 ⸻
 
@@ -356,6 +361,13 @@ Success Output
   value: Comment
 }
 
+Errors
+	•	InvalidCommentData
+	•	AuthorizationRequired
+	•	UnauthorizedCommentDeletion
+	•	CommentNotFound
+	•	EventNotFound
+	•	UnexpectedDependencyError
 
 ⸻
 

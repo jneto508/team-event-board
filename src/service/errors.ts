@@ -16,6 +16,7 @@ export type RSVPError =
 export type CommentError =
     | {name: "CommentNotFound"; message: string}
     | {name: "InvalidCommentData"; message: string}
+    | {name: "UnauthorizedCommentDeletion"; message: string}
     | {name: "ValidationError"; message: string}
     | {name: "AuthorizationRequired"; message: string}
     | {name: "UnexpectedDependencyError"; message: string}
@@ -68,6 +69,11 @@ export const CommentNotFound = (message: string): CommentError => ({
 
 export const InvalidCommentData = (message: string): CommentError => ({
     name: "InvalidCommentData",
+    message
+});
+
+export const UnauthorizedCommentDeletion = (message: string): CommentError => ({
+    name: "UnauthorizedCommentDeletion",
     message
 });
 
