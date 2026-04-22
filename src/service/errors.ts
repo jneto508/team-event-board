@@ -4,6 +4,7 @@ export type EventError =
     | {name: "ValidationError"; message: string}
     | {name: "UnexpectedDependencyError"; message: string}
     | {name: "InvalidSearchInput"; message: string}
+    | { name: "InvalidSaveOperation"; message: string }
     | {name: "Forbidden"; message: string};
 
 export type RSVPError = 
@@ -74,6 +75,11 @@ export const InvalidSearchInput = (message: string): EventError => ({
     name: "InvalidSearchInput",
     message
 });
+
+export const InvalidSaveOperation = (message: string): EventError => ({
+    name: "InvalidSaveOperation",
+    message,
+  });
 
 export const CommentAuthorizationRequired = (message: string): CommentError => ({
     name: "AuthorizationRequired",
