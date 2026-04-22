@@ -41,6 +41,11 @@ export function createComposedApp(logger?: ILoggingService): IApp {
     const eventService = CreateEventService(eventRepository);
     const rsvpService = CreateRSVPService(eventRepository, eventRepository);
     const savedEventService = new SavedEventService(savedEventRepository, eventRepository);
+    const eventCommentsService = CreateEventCommentsService(
+        eventRepository,
+        eventRepository,
+        authUsers,
+    );
 
     // RSVP dashboard wiring
     const memberRsvpsDashboardService = CreateMemberRsvpsDashboardService(
@@ -63,15 +68,11 @@ export function createComposedApp(logger?: ILoggingService): IApp {
         savedEventService,
         rsvpService,
         attendeeListService,
+        eventCommentsService,
         resolvedLogger,
     );
 
     // Event comments wiring
-    const eventCommentsService = CreateEventCommentsService(
-        eventRepository,
-        eventRepository,
-        authUsers,
-    );
     const eventCommentsController = CreateEventCommentsController(
         eventCommentsService,
         resolvedLogger,
