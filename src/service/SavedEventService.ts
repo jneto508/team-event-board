@@ -53,12 +53,12 @@ export class SavedEventService {
 
     const savedIdsResult = await this.savedRepo.getSavedEventsByUser(userId);
     if (!savedIdsResult.ok) {
-      return Err(savedIdsResult.value);
+      return Err(savedIdsResult.value as EventError);
     }
 
     const allEventsResult = await this.eventRepo.getAllEvents();
     if (!allEventsResult.ok) {
-      return Err(allEventsResult.value);
+      return allEventsResult;
     }
 
     const savedIds = savedIdsResult.value;
