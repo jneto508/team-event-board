@@ -1,6 +1,7 @@
 export type EventError =
     | {name: "EventNotFound"; message: string}
     | {name: "InvalidEventData"; message: string}
+    | {name: "InvalidEventState"; message: string}
     | {name: "ValidationError"; message: string}
     | {name: "UnexpectedDependencyError"; message: string}
     | {name: "InvalidSearchInput"; message: string}
@@ -44,6 +45,11 @@ export const UnexpectedDependencyError = (message: string): EventError => ({
 
 export const RSVPUnexpectedDependencyError = (message: string): RSVPError => ({
     name: "UnexpectedDependencyError",
+    message
+});
+
+export const InvalidEventState = (message: string): EventError => ({
+    name: "InvalidEventState",
     message
 });
 
