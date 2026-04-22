@@ -8,9 +8,28 @@
       <h1 class="text-3xl font-bold text-slate-900 mb-2"><%= event.title %></h1>
       <p class="text-slate-500 mb-0"><%= event.location %> · <%= event.category %></p>
     </div>
-    <a href="/home" class="px-3.5 py-2 rounded-lg bg-white text-blue-700 border border-slate-200 no-underline hover:bg-blue-50 text-sm font-medium">
-      Back to Home
-    </a>
+
+    <div class="flex gap-2">
+      <% if (session.currentUser && (session.currentUser.role === "admin" || session.currentUser.userId === event.organizerId)) { %>
+        <a
+          href="/events/<%= event.id %>/edit"
+          class="px-3.5 py-2 rounded-lg bg-white text-blue-700 border border-slate-200 no-underline hover:bg-blue-50 text-sm font-medium"
+        >
+          Edit Event
+        </a>
+
+        <!-- Cancel button placeholder (Feature 5) -->
+        <button
+          class="px-3.5 py-2 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm font-medium cursor-not-allowed"
+        >
+          Cancel Event (coming soon)
+        </button>
+      <% } %>
+
+      <a href="/home" class="px-3.5 py-2 rounded-lg bg-white text-blue-700 border border-slate-200 no-underline hover:bg-blue-50 text-sm font-medium">
+        Back to Home
+      </a>
+    </div>
   </div>
 
   <% if (event.status === "draft") { %>
@@ -59,7 +78,9 @@
         </div>
         <div>
           <dt class="font-medium text-slate-700">Capacity</dt>
-          <dd class="text-slate-600 mt-1"><%= typeof event.capacity === "number" && event.capacity > 0 ? event.capacity : "No limit" %></dd>
+          <dd class="text-slate-600 mt-1">
+            <%= typeof event.capacity === "number" && event.capacity > 0 ? event.capacity : "No limit" %>
+          </dd>
         </div>
       </dl>
     </div>
@@ -70,10 +91,12 @@
       <!-- Feature 5: organizer publish/cancel controls go here -->
       Organizer controls placeholder
     </div>
+
     <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-500">
       <!-- Feature 4: RSVP button/status goes here -->
       RSVP placeholder
     </div>
+
     <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-500">
       <!-- Feature 12: attendee list entry point -->
       <p class="mb-2 font-medium text-slate-700">Attendee List</p>
@@ -88,10 +111,7 @@
   </div>
 </section>
 
-<div
-  id="comments-panel"
-  class="max-w-3xl"
->
+<div id="comments-panel" class="max-w-3xl">
   <%- include("partials/comments_panel", {
     event,
     comments,
