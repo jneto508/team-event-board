@@ -276,7 +276,7 @@ Success Output
 
 Feature 12 — Attendee List
 
-EventService.getAttendeeList
+AttendeeListService.getAttendeeList
 
 Returns grouped attendee list for authorized organizer/admin.
 
