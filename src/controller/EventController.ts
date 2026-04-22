@@ -164,6 +164,16 @@ class EventController implements IEventController {
     const result = await this.eventService.searchEvents(query);
   
     if (!result.ok) {
+      const error = result.value;
+  
+      if (this.isEventError(error) && error.name === "InvalidSearchInput") {
+        res.render("partials/error", {
+          message: error.message,
+          layout: false,
+        });
+        return;
+      }
+  
       res.status(500).render("partials/error", {
         message: "Unable to search events.",
         layout: false,
@@ -171,11 +181,9 @@ class EventController implements IEventController {
       return;
     }
   
-    res.render("home", {
-      session,
+    res.render("partials/eventList", {
       events: result.value,
-      query,
-      pageError: null,
+      layout: false,
     });
   }
   async showEventDetail(

@@ -53,10 +53,6 @@ export function createComposedApp(logger?: ILoggingService): IApp {
         resolvedLogger,
     );
 
-    // Event wiring
-    const eventService = CreateEventService(eventRepository);
-    const rsvpService = CreateRSVPService(eventRepository, eventRepository);
-    const savedEventService = new SavedEventService(savedEventRepository, eventRepository);
     const attendeeListService = CreateAttendeeListService(
         eventRepository,
         eventRepository,
