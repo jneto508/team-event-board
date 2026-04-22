@@ -191,35 +191,36 @@ export class EventService implements IEventService {
 
     async searchEvents(query: string): Promise<Result<IEvent[], EventError>> {
         const archiveResult = await this.archiveExpiredEvents();
-        if (archiveResult.ok === false) {
-            return Err(archiveResult.value);
+        if (!archiveResult.ok) {
+            return Err(archiveResult.value as EventError);
         }
-
+    
         const result = await this.repository.getAllEvents();
-        if (result.ok === false) {
-            return Err(result.value);
+        if (!result.ok) {
+            return Err(result.value as EventError);
         }
-
+    
         const events = result.value;
         const now = new Date();
-        if (typeof query !== "string") {
-            return Err(InvalidSearchInput("Search query must be a string."));
-          }
-          
-          if (query.length > 100) {
+    
+        const q = query.toLowerCase().trim();
+    
+        if (q.length > 100) {
             return Err(InvalidSearchInput("Search query too long."));
-          }
-          
-          const q = query.toLowerCase().trim();
-
+        }
+    
+        if (/[^a-zA-Z0-9\s]/.test(q)) {
+            return Err(InvalidSearchInput("Invalid characters in search."));
+        }
+    
         const publishedUpcoming = events.filter((event) => {
             return event.status === "published" && event.startDateTime > now;
         });
-
+    
         if (q === "") {
             return Ok(publishedUpcoming);
         }
-
+    
         const filtered = publishedUpcoming.filter((event) => {
             return (
                 event.title.toLowerCase().includes(q) ||
@@ -227,7 +228,7 @@ export class EventService implements IEventService {
                 event.location.toLowerCase().includes(q)
             );
         });
-
+    
         return Ok(filtered);
     }
 
