@@ -12,14 +12,12 @@
             <a href="/events/<%= event.id %>">View Event</a>
           </div>
   
-          <form method="POST" action="/events/<%= event.id %>/save" class="mt-2">
-            <button 
-              type="submit"
-              class="px-3 py-1 bg-slate-200 rounded hover:bg-slate-300 text-sm"
-            >
-              Save / Unsave
-            </button>
-          </form>
+          <div class="mt-2">
+            <%- include("saveButton", {
+              eventId: event.id,
+              status: (savedEventIds || []).includes(event.id) ? "saved" : "unsaved"
+            }) %>
+          </div>
         </article>
       <% }) %>
     </div>
