@@ -56,7 +56,9 @@ class EventCommentsController implements IEventCommentsController {
   private mapErrorStatus(error: CommentError): number {
     if (error.name === "EventNotFound" || error.name === "CommentNotFound") return 404;
     if (error.name === "InvalidCommentData" || error.name === "ValidationError") return 400;
-    if (error.name === "AuthorizationRequired") return 403;
+    if (error.name === "AuthorizationRequired" || error.name === "UnauthorizedCommentDeletion") {
+      return 403;
+    }
     return 500;
   }
 

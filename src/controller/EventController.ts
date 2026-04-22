@@ -10,6 +10,28 @@ import type { ILoggingService } from "../service/LoggingService";
 import type { SavedEventService } from "../service/SavedEventService";
 import type { UserRole } from "../auth/User";
 import type { IAttendeeListService } from "../service/AttendeeListService";
+import type {
+  EventCommentView,
+  IEventCommentsService,
+} from "../service/EventCommentsService";
+
+function formatRelativeTime(date: Date, now: Date = new Date()): string {
+  const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 1000));
+  if (elapsedSeconds < 60) return "just now";
+
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes} minute${elapsedMinutes === 1 ? "" : "s"} ago`;
+  }
+
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) {
+    return `${elapsedHours} hour${elapsedHours === 1 ? "" : "s"} ago`;
+  }
+
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  return `${elapsedDays} day${elapsedDays === 1 ? "" : "s"} ago`;
+}
 
 export interface IEventController {
   showNewEventForm(res: Response, session: IAppBrowserSession): Promise<void>;
@@ -92,6 +114,7 @@ class EventController implements IEventController {
     private readonly savedEventService: SavedEventService,
     private readonly rsvpService: IRSVPService,
     private readonly attendeeListService: IAttendeeListService,
+    private readonly eventCommentsService: IEventCommentsService,
     private readonly logger: ILoggingService,
   ) {}
 
@@ -216,10 +239,31 @@ class EventController implements IEventController {
       return;
     }
 
+    let comments: EventCommentView[] = [];
+    let pageError: string | null = null;
+
+    if (result.value.status === "published") {
+      const commentsResult = await this.eventCommentsService.getEventCommentsPage(
+        String(eventId),
+        actor.userId,
+      );
+
+      if (commentsResult.ok === false) {
+        pageError = commentsResult.value.message;
+        this.logger.warn(`Unable to load event comments: ${commentsResult.value.message}`);
+      } else {
+        comments = commentsResult.value.comments;
+      }
+    }
+
     res.render("events/show", {
       session,
       event: result.value,
-      pageError: null,
+      comments,
+      currentUserId: actor.userId,
+      commentValue: "",
+      pageError,
+      formatRelativeTime,
     });
   }
 
@@ -516,6 +560,7 @@ export function CreateEventController(
   savedEventService: SavedEventService,
   rsvpService: IRSVPService,
   attendeeListService: IAttendeeListService,
+  eventCommentsService: IEventCommentsService,
   logger: ILoggingService,
 ): IEventController {
   return new EventController(
@@ -523,6 +568,7 @@ export function CreateEventController(
     savedEventService,
     rsvpService,
     attendeeListService,
+    eventCommentsService,
     logger,
   );
 }

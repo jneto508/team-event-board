@@ -6,6 +6,7 @@ import {
   CommentAuthorizationRequired,
   CommentNotFound,
   InvalidCommentData,
+  UnauthorizedCommentDeletion,
   type CommentError,
 } from "./errors";
 
@@ -251,7 +252,7 @@ class EventCommentsService implements IEventCommentsService {
 
     if (!canDelete) {
       return Err(
-        CommentAuthorizationRequired(
+        UnauthorizedCommentDeletion(
           "You can only delete your own comments unless you organize this event or are an admin.",
         ),
       );
