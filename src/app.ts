@@ -397,7 +397,7 @@ class ExpressApp implements IApp {
         this.app.get(
             "/events/new",
             asyncHandler(async (req, res) => {
-                if (!this.requireAuthenticated(req, res)) {
+                if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers can create events.")) {
                     return;
                 }
 
@@ -503,7 +503,7 @@ class ExpressApp implements IApp {
         this.app.post(
             "/events",
             asyncHandler(async (req, res) => {
-                if (!this.requireAuthenticated(req, res)) {
+                if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers can create events.")) {
                     return;
                 }
 
