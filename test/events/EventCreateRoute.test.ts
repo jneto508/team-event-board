@@ -77,7 +77,18 @@ describe("Event creation routes", () => {
       expect(response.text).toContain("log in");
     });
 
-    it.todo("rejects member-role users attempting to create events");
+    it("rejects member-role users attempting to create events", async () => {
+      const app = createComposedApp().getExpressApp();
+      const agent = request.agent(app);
+      await loginAs(agent, "user@app.test");
+
+      const response = await agent
+        .post("/events")
+        .type("form")
+        .send(VALID_EVENT);
+
+      expect(response.status).toBe(403);
+    });
   });
 
   describe("POST /events — InvalidEventData errors", () => {
