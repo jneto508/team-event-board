@@ -248,11 +248,11 @@ class EventController implements IEventController {
         actor.userId,
       );
 
-      if (commentsResult.ok) {
-        comments = commentsResult.value.comments;
-      } else {
+      if (commentsResult.ok === false) {
         pageError = commentsResult.value.message;
         this.logger.warn(`Unable to load event comments: ${commentsResult.value.message}`);
+      } else {
+        comments = commentsResult.value.comments;
       }
     }
 
