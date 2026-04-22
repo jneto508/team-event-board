@@ -644,6 +644,7 @@ class ExpressApp implements IApp {
                     res,
                     eventId,
                     user.userId,
+                    user.role,
                 );
             }),
         );
