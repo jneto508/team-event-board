@@ -1,0 +1,99 @@
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-gradient-to-b from-white to-slate-50 shadow-lg">
+  <div class="flex items-start justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-900 mb-2">Archived Events</h1>
+      <p class="text-slate-500 mb-0">
+        Browse past and cancelled events that are no longer accepting RSVPs.
+      </p>
+    </div>
+    <a
+      href="/home"
+      class="px-3.5 py-2 rounded-lg bg-white text-blue-700 border border-slate-200 no-underline hover:bg-blue-50 text-sm font-medium"
+    >
+      Back to Home
+    </a>
+  </div>
+</section>
+
+<% if (pageError) { %>
+  <%- include("../partials/error", { message: pageError }) %>
+<% } %>
+
+<section class="mb-5 p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
+  <form method="GET" action="/events/archive" class="flex gap-3 items-end flex-wrap">
+    <div class="min-w-[220px]">
+      <label for="category" class="block text-sm font-medium text-slate-700 mb-2">
+        Filter by category
+      </label>
+      <select
+        id="category"
+        name="category"
+        class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+      >
+        <option value="">All categories</option>
+        <% categories.forEach((category) => { %>
+          <option
+            value="<%= category %>"
+            <%= selectedCategory === category ? "selected" : "" %>
+          >
+            <%= category.charAt(0).toUpperCase() + category.slice(1) %>
+          </option>
+        <% }) %>
+      </select>
+    </div>
+
+    <button
+      type="submit"
+      class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700"
+    >
+      Apply Filter
+    </button>
+
+    <% if (selectedCategory) { %>
+      <a
+        href="/events/archive"
+        class="px-4 py-2 rounded-lg bg-white text-slate-700 border border-slate-200 no-underline hover:bg-slate-50 text-sm font-medium"
+      >
+        Clear
+      </a>
+    <% } %>
+  </form>
+</section>
+
+<section class="grid gap-4">
+  <% if (!events || events.length === 0) { %>
+    <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <p class="text-slate-500 mb-0">No archived events match this filter.</p>
+    </article>
+  <% } else { %>
+    <% events.forEach((event) => { %>
+      <article class="rounded-xl border border-slate-200 bg-slate-50 p-5">
+        <div class="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <div class="flex items-center gap-2 mb-2 flex-wrap">
+              <h2 class="text-xl font-semibold text-slate-900 mb-0"><%= event.title %></h2>
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wide bg-slate-200 text-slate-700">
+                <%= event.status %>
+              </span>
+            </div>
+
+            <p class="text-slate-500 text-sm mb-1">
+              <%= event.location %> · <%= event.category %>
+            </p>
+            <p class="text-slate-500 text-sm mb-3">
+              Ended <%= event.endDateTime.toLocaleString() %>
+            </p>
+            <p class="text-slate-600 mb-0"><%= event.description %></p>
+          </div>
+
+          <a
+            href="/events/<%= event.id %>"
+            class="px-3.5 py-2 rounded-lg bg-white text-blue-700 border border-slate-200 no-underline hover:bg-blue-50 text-sm font-medium"
+          >
+            View Details
+          </a>
+        </div>
+      </article>
+    <% }) %>
+  <% } %>
+</section>
