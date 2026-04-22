@@ -3,6 +3,7 @@ import { IEvent } from "../model/Event";
 import {
     EventError,
     InvalidEventData,
+    InvalidEventState,
     EventNotFound,
     Forbidden,
     InvalidSearchInput,
@@ -176,7 +177,7 @@ export class EventService implements IEventService {
         const event = found.value;
 
         if (event.status === "cancelled" || event.status === "past") {
-            return Err(Forbidden("Cannot edit a cancelled or past event."));
+            return Err(InvalidEventState("Cannot edit a cancelled or past event."));
         }
 
         if (actingUserRole === "user") {
