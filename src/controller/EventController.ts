@@ -27,7 +27,7 @@ export interface IEventController {
     organizerId: string,
     session: IAppBrowserSession,
   ): Promise<void>;
-  toggleSave(res: Response, eventId: number, userId: string): Promise<void>;
+  toggleSave(res: Response, eventId: number, userId: string, userRole: string): Promise<void>;
   toggleRSVP(
     res: Response,
     eventId: number,
@@ -115,11 +115,12 @@ class EventController implements IEventController {
   async toggleSave(
     res: Response,
     eventId: number,
-    userId: string
+    userId: string,
+    userRole: string
   ): Promise<void> {
     this.logger.info("Toggling saved event");
-  
-    const result = await this.savedEventService.toggleSave(userId, eventId);
+
+    const result = await this.savedEventService.toggleSave(userId, eventId, userRole);
   
     if (!result.ok) {
       res.status(400).render("partials/error", {
@@ -139,7 +140,8 @@ class EventController implements IEventController {
   ): Promise<void> {
     this.logger.info("Showing saved events");
   
-    const result = await this.savedEventService.getSavedEvents(userId);
+    const userRole = session.authenticatedUser?.role ?? "guest";
+    const result = await this.savedEventService.getSavedEvents(userId, userRole);
   
     if (!result.ok) {
       res.status(500).render("partials/error", {
