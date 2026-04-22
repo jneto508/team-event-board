@@ -28,12 +28,14 @@
 <section class="mb-5 max-w-3xl p-6 border border-slate-200 rounded-2xl bg-white shadow-lg">
   <div class="flex items-center justify-between mb-4">
     <h2 class="text-xl font-semibold">Published Events</h2>
-    <a
-      href="/events/new"
-      class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium no-underline hover:bg-blue-700 text-sm"
-    >
-      + Create Event
-    </a>
+    <% if (session.authenticatedUser && session.authenticatedUser.role !== "user") { %>
+      <a
+        href="/events/new"
+        class="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium no-underline hover:bg-blue-700 text-sm"
+      >
+        + Create Event
+      </a>
+    <% } %>
   </div>
   <div id="event-list">
     <% const eventsToShow = typeof events !== 'undefined' ? events : publishedEvents; %>
