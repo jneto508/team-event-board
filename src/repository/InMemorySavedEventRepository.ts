@@ -1,7 +1,7 @@
-import { Ok } from "../lib/result";
+import { Ok} from "../lib/result";
 import type { ISavedEventRepository } from "./SavedEventRepository";
 import type { Result } from "../lib/result";
-import type { EventError } from "../service/errors";
+import type { EventError} from "../service/errors";
 
 export class InMemorySavedEventRepository implements ISavedEventRepository {
   private saved: { userId: string; eventId: number }[] = [];
