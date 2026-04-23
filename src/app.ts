@@ -413,6 +413,24 @@ class ExpressApp implements IApp {
         );
 
         this.app.get(
+            "/events/archive",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                await this.eventController.showArchivePage(
+                    res,
+                    recordPageView(sessionStore(req)),
+                    typeof req.query.category === "string"
+                        ? req.query.category
+                        : undefined,
+                    this.isHtmxRequest(req),
+                );
+            }),
+        );
+
+        this.app.get(
             "/events/:eventId",
             asyncHandler(async (req, res) => {
                 if (!this.requireAuthenticated(req, res)) {
@@ -753,23 +771,6 @@ class ExpressApp implements IApp {
                     user.userId,
                     user.role,
                     touchAppSession(store),
-                );
-            }),
-        );
-
-        this.app.get(
-            "/events/archive",
-            asyncHandler(async (req, res) => {
-                if (!this.requireAuthenticated(req, res)) {
-                    return;
-                }
-
-                await this.eventController.showArchivePage(
-                    res,
-                    recordPageView(sessionStore(req)),
-                    typeof req.query.category === "string"
-                        ? req.query.category
-                        : undefined,
                 );
             }),
         );

@@ -11,6 +11,9 @@ export type EventError =
 export type RSVPError = 
     | {name: "RSVPNotFound"; message: string}
     | {name: "InvalidRSVPData"; message: string}
+    | {name: "RSVPForbidden"; message: string}
+    | {name: "OrganizerCannotRSVP"; message: string}
+    | {name: "RSVPClosed"; message: string}
     | {name: "ValidationError"; message: string}
     | {name: "UnexpectedDependencyError"; message: string};
 
@@ -65,6 +68,21 @@ export const RSVPNotFound = (message: string): RSVPError => ({
 
 export const InvalidRSVPData = (message: string): RSVPError => ({
     name: "InvalidRSVPData",
+    message
+});
+
+export const RSVPForbidden = (message: string): RSVPError => ({
+    name: "RSVPForbidden",
+    message
+});
+
+export const OrganizerCannotRSVP = (message: string): RSVPError => ({
+    name: "OrganizerCannotRSVP",
+    message
+});
+
+export const RSVPClosed = (message: string): RSVPError => ({
+    name: "RSVPClosed",
     message
 });
 
