@@ -140,7 +140,7 @@ class EventCommentsController implements IEventCommentsController {
   }
 
   async showHome(res: Response, session: IAppBrowserSession): Promise<void> {
-    const result = await this.service.listPublishedEvents();
+    const result = await this.service.listPublishedEvents(session.authenticatedUser?.userId);
     if (result.ok === false) {
       this.logger.error(`Unable to load published events: ${result.value.message}`);
       res.status(500);

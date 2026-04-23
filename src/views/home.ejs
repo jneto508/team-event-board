@@ -38,34 +38,7 @@
     <% } %>
   </div>
   <div id="event-list">
-    <% const eventsToShow = typeof events !== 'undefined' ? events : publishedEvents; %>
-  
-    <% if (eventsToShow && eventsToShow.length > 0) { %>
-      <div class="grid gap-4">
-        <% eventsToShow.forEach((event) => { %>
-          <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <h3><%= event.title %></h3>
-                <p><%= event.location %> · <%= event.category %></p>
-                <p><%= event.description %></p>
-              </div>
-    
-              <a href="/events/<%= event.id %>">View Event</a>
-            </div>
-    
-            <div class="mt-2">
-              <%- include("partials/saveButton", {
-                eventId: event.id,
-                status: savedEventIds.includes(event.id) ? "saved" : "unsaved"
-              }) %>
-            </div>
-    
-          </article>
-        <% }) %>
-      </div>
-    <% } else { %>
-      <p class="text-slate-500 text-sm">No events found.</p>
-    <% } %>
+    <% const eventsToShow = typeof events !== "undefined" ? events : publishedEvents; %>
+    <%- include("partials/eventList", { events: eventsToShow }) %>
   </div>
 </section>

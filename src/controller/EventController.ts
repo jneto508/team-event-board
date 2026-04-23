@@ -55,6 +55,11 @@ export interface IEventController {
     eventId: number,
     currentUser: IAuthenticatedUserSession
   ): Promise<void>;
+    toggleRSVPInline(
+    res: Response,
+    eventId: number,
+    currentUser: IAuthenticatedUserSession
+  ): Promise<void>;
   showArchivePage(
     res: Response,
     session: IAppBrowserSession,
@@ -133,6 +138,32 @@ class EventController implements IEventController {
     if (error.name === "InvalidEventData" || error.name === "ValidationError" || error.name === "InvalidEventState")
       return 400;
     return 500;
+  }
+
+  private async renderRsvpTogglePartial(
+    res: Response,
+    eventId: number,
+    viewerUserId: string,
+    pageError: string | null = null,
+  ): Promise<void> {
+    const eventResult = await this.eventCommentsService.getEventViewModel(
+      eventId,
+      viewerUserId,
+    );
+
+    if (eventResult.ok === false) {
+      res.status(500).render("partials/error", {
+        message: eventResult.value.message,
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/partials/rsvp-toggle", {
+      layout: false,
+      event: eventResult.value,
+      pageError,
+    });
   }
 
   async toggleSave(
@@ -229,9 +260,22 @@ class EventController implements IEventController {
         savedEventIds = savedResult.value.map((e: { id: number }) => e.id);
       }
     }
+
+    const enrichedResult = await this.eventCommentsService.enrichEventsForViewer(
+      result.value,
+      session.authenticatedUser?.userId,
+    );
+
+    if (enrichedResult.ok === false) {
+      res.status(500).render("partials/error", {
+        message: enrichedResult.value.message,
+        layout: false,
+      });
+      return;
+    }
   
     res.render("partials/eventList", {
-      events: result.value,
+      events: enrichedResult.value,
       savedEventIds, 
       layout: false,
     });
@@ -281,9 +325,18 @@ class EventController implements IEventController {
       }
     }
 
+    const eventViewResult = await this.eventCommentsService.getEventViewModel(
+      eventId,
+      actor.userId,
+    );
+
+    const eventForView = eventViewResult.ok
+      ? { ...result.value, ...eventViewResult.value }
+      : result.value;
+
     res.render("events/show", {
       session,
-      event: result.value,
+      event: eventForView,
       comments,
       currentUserId: actor.userId,
       commentValue: "",
@@ -577,6 +630,40 @@ class EventController implements IEventController {
     }
 
     res.json(result.value);
+  }
+
+  async toggleRSVPInline(
+    res: Response,
+    eventId: number,
+    currentUser: IAuthenticatedUserSession,
+  ): Promise<void> {
+    const result = await this.rsvpService.toggleRSVP(eventId, currentUser);
+
+    if (result.ok === false) {
+      const error = result.value;
+      const status =
+        error.name === "EventNotFound"
+          ? 404
+          : error.name === "UnexpectedDependencyError"
+            ? 500
+            : 400;
+
+      res.status(status);
+      await this.renderRsvpTogglePartial(
+        res,
+        eventId,
+        currentUser.userId,
+        error.message,
+      );
+      return;
+    }
+
+    await this.renderRsvpTogglePartial(
+      res,
+      eventId,
+      currentUser.userId,
+      null,
+    );
   }
 }
 

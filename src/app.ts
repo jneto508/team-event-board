@@ -811,6 +811,32 @@ class ExpressApp implements IApp {
                     return;
                 }
 
+                if (
+                    this.isHtmxRequest(req) &&
+                    typeof req.get("HX-Target") === "string" &&
+                    req.get("HX-Target")!.startsWith("rsvp-toggle-")
+                ) {
+                    if (!this.requireAuthenticated(req, res)) {
+                        return;
+                    }
+
+                    const currentUser = getAuthenticatedUser(sessionStore(req));
+                    if (!currentUser) {
+                        res.status(401).render("partials/error", {
+                            message: AuthenticationRequired("Please log in to continue.").message,
+                            layout: false,
+                        });
+                        return;
+                    }
+
+                    await this.eventController.toggleRSVPInline(
+                        res,
+                        eventId,
+                        currentUser,
+                    );
+                    return;
+                }
+
                 if (!this.requireAuthenticated(req, res)) {
                     return;
                 }
