@@ -397,7 +397,7 @@ class ExpressApp implements IApp {
         this.app.get(
             "/events/new",
             asyncHandler(async (req, res) => {
-                if (!this.requireAuthenticated(req, res)) {
+                if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers can create events.")) {
                     return;
                 }
 
@@ -408,6 +408,24 @@ class ExpressApp implements IApp {
                 await this.eventController.showNewEventForm(
                     res,
                     browserSession,
+                );
+            }),
+        );
+
+        this.app.get(
+            "/events/archive",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                await this.eventController.showArchivePage(
+                    res,
+                    recordPageView(sessionStore(req)),
+                    typeof req.query.category === "string"
+                        ? req.query.category
+                        : undefined,
+                    this.isHtmxRequest(req),
                 );
             }),
         );
@@ -456,10 +474,54 @@ class ExpressApp implements IApp {
             }),
         );
 
+        this.app.get(
+            "/events/:eventId/attendees",
+            asyncHandler(async (req, res) => {
+                if (!this.requireAuthenticated(req, res)) {
+                    return;
+                }
+
+                const browserSession = recordPageView(sessionStore(req));
+                const currentUser = getAuthenticatedUser(sessionStore(req));
+                if (!currentUser) {
+                    res.status(401).render("partials/error", {
+                        message: AuthenticationRequired(
+                            "Please log in to continue.",
+                        ).message,
+                        layout: false,
+                    });
+                    return;
+                }
+
+                const eventId = Number.parseInt(
+                    typeof req.params.eventId === "string" ? req.params.eventId : "",
+                    10,
+                );
+
+                if (Number.isNaN(eventId)) {
+                    res.status(400).render("partials/error", {
+                        message: "Invalid event ID.",
+                        layout: false,
+                    });
+                    return;
+                }
+
+                await this.eventController.showAttendeeList(
+                    res,
+                    eventId,
+                    {
+                        userId: currentUser.userId,
+                        role: currentUser.role,
+                    },
+                    browserSession,
+                );
+            }),
+        );
+
         this.app.post(
             "/events",
             asyncHandler(async (req, res) => {
-                if (!this.requireAuthenticated(req, res)) {
+                if (!this.requireRole(req, res, ["staff", "admin"], "Only organizers can create events.")) {
                     return;
                 }
 
@@ -600,6 +662,7 @@ class ExpressApp implements IApp {
                     res,
                     eventId,
                     user.userId,
+                    user.role,
                 );
             }),
         );
@@ -712,23 +775,6 @@ class ExpressApp implements IApp {
             }),
         );
 
-        this.app.get(
-            "/events/archive",
-            asyncHandler(async (req, res) => {
-                if (!this.requireAuthenticated(req, res)) {
-                    return;
-                }
-
-                await this.eventController.showArchivePage(
-                    res,
-                    recordPageView(sessionStore(req)),
-                    typeof req.query.category === "string"
-                        ? req.query.category
-                        : undefined,
-                );
-            }),
-        );
-
         this.app.post(
             "/events/:id/rsvp-toggle",
             asyncHandler(async (req, res) => {
@@ -762,6 +808,32 @@ class ExpressApp implements IApp {
                         currentUser,
                         eventId,
                         touchAppSession(sessionStore(req)),
+                    );
+                    return;
+                }
+
+                if (
+                    this.isHtmxRequest(req) &&
+                    typeof req.get("HX-Target") === "string" &&
+                    req.get("HX-Target")!.startsWith("rsvp-toggle-")
+                ) {
+                    if (!this.requireAuthenticated(req, res)) {
+                        return;
+                    }
+
+                    const currentUser = getAuthenticatedUser(sessionStore(req));
+                    if (!currentUser) {
+                        res.status(401).render("partials/error", {
+                            message: AuthenticationRequired("Please log in to continue.").message,
+                            layout: false,
+                        });
+                        return;
+                    }
+
+                    await this.eventController.toggleRSVPInline(
+                        res,
+                        eventId,
+                        currentUser,
                     );
                     return;
                 }

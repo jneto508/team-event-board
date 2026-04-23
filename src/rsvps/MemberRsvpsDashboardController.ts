@@ -8,7 +8,7 @@ import type {
   IMemberRsvpsDashboardService,
   MemberRsvpsDashboard,
 } from "../service/MemberRsvpsDashboardService";
-import type { IRSVPService } from "../service/RSVPService";
+import type { IRSVPService, ToggleRSVPError } from "../service/RSVPService";
 
 export interface IMemberRsvpsDashboardController {
   showDashboard(
@@ -41,6 +41,27 @@ class MemberRsvpsDashboardController implements IMemberRsvpsDashboardController 
     if (error.name === "ValidationError") return 400;
     if (error.name === "RSVPNotFound") return 404;
     if (error.name === "InvalidRSVPState") return 409;
+    return 500;
+  }
+
+  private mapRsvpErrorStatus(error: ToggleRSVPError): number {
+    if (error.name === "EventNotFound" || error.name === "RSVPNotFound") return 404;
+    if (
+      error.name === "Forbidden" ||
+      error.name === "RSVPForbidden" ||
+      error.name === "OrganizerCannotRSVP"
+    ) {
+      return 403;
+    }
+    if (error.name === "RSVPClosed") return 409;
+    if (
+      error.name === "InvalidEventData" ||
+      error.name === "InvalidEventState" ||
+      error.name === "InvalidRSVPData" ||
+      error.name === "ValidationError"
+    ) {
+      return 400;
+    }
     return 500;
   }
 
@@ -133,12 +154,7 @@ class MemberRsvpsDashboardController implements IMemberRsvpsDashboardController 
     const result = await this.rsvpService.toggleRSVP(eventId, currentUser);
     if (result.ok === false) {
       const error = result.value;
-      const status =
-        error.name === "EventNotFound"
-          ? 404
-          : error.name === "UnexpectedDependencyError"
-            ? 500
-            : 400;
+      const status = this.mapRsvpErrorStatus(error);
 
       if (status >= 500) {
         this.logger.error(`Unable to toggle RSVP from dashboard: ${error.message}`);

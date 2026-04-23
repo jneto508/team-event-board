@@ -276,7 +276,7 @@ Success Output
 
 Feature 12 — Attendee List
 
-EventService.getAttendeeList
+AttendeeListService.getAttendeeList
 
 Returns grouped attendee list for authorized organizer/admin.
 
@@ -335,6 +335,11 @@ Success Output
   value: Comment
 }
 
+Errors
+	•	InvalidCommentData
+	•	AuthorizationRequired
+	•	EventNotFound
+	•	UnexpectedDependencyError
 
 ⸻
 
@@ -356,6 +361,13 @@ Success Output
   value: Comment
 }
 
+Errors
+	•	InvalidCommentData
+	•	AuthorizationRequired
+	•	UnauthorizedCommentDeletion
+	•	CommentNotFound
+	•	EventNotFound
+	•	UnexpectedDependencyError
 
 ⸻
 

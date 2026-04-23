@@ -63,7 +63,7 @@ const DEMO_EVENTS: IEvent[] = [
     capacity: 18,
     startDateTime: new Date("2026-05-01T22:00:00.000Z"),
     endDateTime: new Date("2026-05-02T00:00:00.000Z"),
-    organizerId: "user-reader",
+    organizerId: "user-staff",
     createdAt: new Date("2026-03-12T16:00:00.000Z"),
     updatedAt: new Date("2026-03-12T16:00:00.000Z"),
   }),
@@ -93,6 +93,19 @@ const DEMO_EVENTS: IEvent[] = [
     createdAt: new Date("2026-02-25T14:00:00.000Z"),
     updatedAt: new Date("2026-04-01T13:00:00.000Z"),
   }),
+  createEvent(5, {
+    title: "Organizer Planning Session",
+    description: "Draft planning session for organizers before publication.",
+    location: "Conference Room A",
+    category: "planning",
+    status: "draft",
+    capacity: 12,
+    startDateTime: new Date("2026-05-20T17:00:00.000Z"),
+    endDateTime: new Date("2026-05-20T18:30:00.000Z"),
+    organizerId: "user-staff",
+    createdAt: new Date("2026-04-10T12:00:00.000Z"),
+    updatedAt: new Date("2026-04-10T12:00:00.000Z"),
+  }),
 ];
 
 const DEMO_RSVPS: IRSVP[] = [
@@ -119,6 +132,18 @@ const DEMO_RSVPS: IRSVP[] = [
     userId: "user-reader",
     status: "going",
     createdAt: new Date("2026-03-05T10:00:00.000Z"),
+  }),
+  createRSVP(5, {
+    eventId: 1,
+    userId: "user-member2",
+    status: "going",
+    createdAt: new Date("2026-03-20T11:00:00.000Z"),
+  }),
+  createRSVP(6, {
+    eventId: 1,
+    userId: "user-admin",
+    status: "waitlisted",
+    createdAt: new Date("2026-03-20T12:00:00.000Z"),
   }),
 ];
 

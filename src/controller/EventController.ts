@@ -4,11 +4,34 @@ import type {
   IAuthenticatedUserSession,
 } from "../session/AppSession";
 import type { IEventService } from "../service/EventService";
-import type { IRSVPService } from "../service/RSVPService";
-import type { EventError } from "../service/errors";
+import type { IRSVPService, ToggleRSVPError } from "../service/RSVPService";
+import type { EventError, RSVPError } from "../service/errors";
 import type { ILoggingService } from "../service/LoggingService";
 import type { SavedEventService } from "../service/SavedEventService";
 import type { UserRole } from "../auth/User";
+import type { IAttendeeListService } from "../service/AttendeeListService";
+import type {
+  EventCommentView,
+  IEventCommentsService,
+} from "../service/EventCommentsService";
+
+function formatRelativeTime(date: Date, now: Date = new Date()): string {
+  const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 1000));
+  if (elapsedSeconds < 60) return "just now";
+
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes} minute${elapsedMinutes === 1 ? "" : "s"} ago`;
+  }
+
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) {
+    return `${elapsedHours} hour${elapsedHours === 1 ? "" : "s"} ago`;
+  }
+
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  return `${elapsedDays} day${elapsedDays === 1 ? "" : "s"} ago`;
+}
 
 export interface IEventController {
   showNewEventForm(res: Response, session: IAppBrowserSession): Promise<void>;
@@ -26,8 +49,13 @@ export interface IEventController {
     organizerId: string,
     session: IAppBrowserSession,
   ): Promise<void>;
-  toggleSave(res: Response, eventId: number, userId: string): Promise<void>;
+  toggleSave(res: Response, eventId: number, userId: string, userRole: string): Promise<void>;
   toggleRSVP(
+    res: Response,
+    eventId: number,
+    currentUser: IAuthenticatedUserSession
+  ): Promise<void>;
+    toggleRSVPInline(
     res: Response,
     eventId: number,
     currentUser: IAuthenticatedUserSession
@@ -36,6 +64,7 @@ export interface IEventController {
     res: Response,
     session: IAppBrowserSession,
     category?: string,
+    htmx?: boolean,
   ): Promise<void>;
   showSavedEvents(
     res: Response,
@@ -54,6 +83,12 @@ export interface IEventController {
     session: IAppBrowserSession,
   ): Promise<void>;
 
+  showAttendeeList(
+    res: Response,
+    eventId: number,
+    actor: { userId: string; role: UserRole },
+    session: IAppBrowserSession,
+  ): Promise<void>;
   showEditEventForm(
     res: Response,
     eventId: number,
@@ -84,6 +119,8 @@ class EventController implements IEventController {
     private readonly eventService: IEventService,
     private readonly savedEventService: SavedEventService,
     private readonly rsvpService: IRSVPService,
+    private readonly attendeeListService: IAttendeeListService,
+    private readonly eventCommentsService: IEventCommentsService,
     private readonly logger: ILoggingService,
   ) {}
 
@@ -99,20 +136,73 @@ class EventController implements IEventController {
   private mapErrorStatus(error: EventError): number {
     if (error.name === "EventNotFound") return 404;
     if (error.name === "Forbidden") return 403;
-    if (error.name === "InvalidEventData" || error.name === "ValidationError")
+    if (error.name === "InvalidEventData" || error.name === "ValidationError" || error.name === "InvalidEventState")
       return 400;
     return 500;
+  }
+
+  private mapRsvpErrorStatus(error: ToggleRSVPError | RSVPError): number {
+    if (error.name === "EventNotFound" || error.name === "RSVPNotFound") return 404;
+    if (
+      error.name === "Forbidden" ||
+      error.name === "RSVPForbidden" ||
+      error.name === "OrganizerCannotRSVP"
+    ) {
+      return 403;
+    }
+    if (error.name === "RSVPClosed") return 409;
+    if (
+      error.name === "InvalidEventData" ||
+      error.name === "InvalidEventState" ||
+      error.name === "InvalidRSVPData" ||
+      error.name === "ValidationError"
+    ) {
+      return 400;
+    }
+    return 500;
+  }
+
+  private async renderRsvpTogglePartial(
+    res: Response,
+    eventId: number,
+    viewerUserId: string,
+    pageError: string | null = null,
+  ): Promise<void> {
+    const eventResult = await this.eventCommentsService.getEventViewModel(
+      eventId,
+      viewerUserId,
+    );
+
+    if (eventResult.ok === false) {
+      res.status(500).render("partials/error", {
+        message: eventResult.value.message,
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/partials/rsvp-toggle", {
+      layout: false,
+      event: eventResult.value,
+      pageError,
+    });
   }
 
   async toggleSave(
     res: Response,
     eventId: number,
-    userId: string
+    userId: string,
+    userRole: string
   ): Promise<void> {
     this.logger.info("Toggling saved event");
-  
-    const result = await this.savedEventService.toggleSave(userId, eventId);
-  
+
+    
+    const result = await this.savedEventService.toggleSave(
+      userId,
+      eventId,
+      userRole
+    );
+
     if (!result.ok) {
       res.status(400).render("partials/error", {
         message: "Unable to toggle saved event.",
@@ -121,7 +211,11 @@ class EventController implements IEventController {
       return;
     }
   
-    res.redirect("/home");
+    res.render("partials/saveButton", {
+      eventId,
+      status: result.value,
+      layout: false,
+    });
   }
 
   async showSavedEvents(
@@ -131,7 +225,8 @@ class EventController implements IEventController {
   ): Promise<void> {
     this.logger.info("Showing saved events");
   
-    const result = await this.savedEventService.getSavedEvents(userId);
+    const userRole = session.authenticatedUser?.role ?? "guest";
+    const result = await this.savedEventService.getSavedEvents(userId, userRole);
   
     if (!result.ok) {
       res.status(500).render("partials/error", {
@@ -156,6 +251,16 @@ class EventController implements IEventController {
     const result = await this.eventService.searchEvents(query);
   
     if (!result.ok) {
+      const error = result.value;
+  
+      if (this.isEventError(error) && error.name === "InvalidSearchInput") {
+        res.render("partials/error", {
+          message: error.message,
+          layout: false,
+        });
+        return;
+      }
+  
       res.status(500).render("partials/error", {
         message: "Unable to search events.",
         layout: false,
@@ -163,11 +268,38 @@ class EventController implements IEventController {
       return;
     }
   
-    res.render("home", {
-      session,
-      events: result.value,
-      query,
-      pageError: null,
+    const user = session.authenticatedUser;
+  
+    let savedEventIds: number[] = [];
+  
+    if (user) {
+      const savedResult = await this.savedEventService.getSavedEvents(
+        user.userId,
+        user.role
+      );
+  
+      if (savedResult.ok) {
+        savedEventIds = savedResult.value.map((e: { id: number }) => e.id);
+      }
+    }
+
+    const enrichedResult = await this.eventCommentsService.enrichEventsForViewer(
+      result.value,
+      session.authenticatedUser?.userId,
+    );
+
+    if (enrichedResult.ok === false) {
+      res.status(500).render("partials/error", {
+        message: enrichedResult.value.message,
+        layout: false,
+      });
+      return;
+    }
+  
+    res.render("partials/eventList", {
+      events: enrichedResult.value,
+      savedEventIds, 
+      layout: false,
     });
   }
   async showEventDetail(
@@ -198,9 +330,75 @@ class EventController implements IEventController {
       return;
     }
 
+    let comments: EventCommentView[] = [];
+    let pageError: string | null = null;
+
+    if (result.value.status === "published") {
+      const commentsResult = await this.eventCommentsService.getEventCommentsPage(
+        String(eventId),
+        actor.userId,
+      );
+
+      if (commentsResult.ok === false) {
+        pageError = commentsResult.value.message;
+        this.logger.warn(`Unable to load event comments: ${commentsResult.value.message}`);
+      } else {
+        comments = commentsResult.value.comments;
+      }
+    }
+
+    const eventViewResult = await this.eventCommentsService.getEventViewModel(
+      eventId,
+      actor.userId,
+    );
+
+    const eventForView = eventViewResult.ok
+      ? { ...result.value, ...eventViewResult.value }
+      : result.value;
+
     res.render("events/show", {
       session,
-      event: result.value,
+      event: eventForView,
+      comments,
+      currentUserId: actor.userId,
+      commentValue: "",
+      pageError,
+      formatRelativeTime,
+    });
+  }
+
+  async showAttendeeList(
+    res: Response,
+    eventId: number,
+    actor: { userId: string; role: UserRole },
+    session: IAppBrowserSession,
+  ): Promise<void> {
+    this.logger.info(`Showing attendee list for event ${eventId}`);
+
+    const result = await this.attendeeListService.getAttendeeList(eventId, actor);
+
+    if (!result.ok && this.isEventError(result.value)) {
+      const error = result.value;
+      const status = this.mapErrorStatus(error);
+      res.status(status).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
+    if (!result.ok) {
+      res.status(500).render("partials/error", {
+        message: "Unable to load attendee list.",
+        layout: false,
+      });
+      return;
+    }
+
+    res.render("events/attendee_list", {
+      layout: false,
+      attendeeList: result.value,
+      eventId,
       pageError: null,
     });
   }
@@ -394,6 +592,7 @@ class EventController implements IEventController {
     res: Response,
     session: IAppBrowserSession,
     category?: string,
+    htmx: boolean = false,
   ): Promise<void> {
     this.logger.info("Showing archived events page");
 
@@ -421,13 +620,23 @@ class EventController implements IEventController {
       new Set(result.value.map((event) => event.category)),
     ).sort();
 
-    res.render("events/archive", {
+    const viewModel = {
       session,
       pageError: null,
       events: result.value,
       categories,
       selectedCategory: String(category ?? "").trim().toLowerCase(),
-    });
+    };
+
+    if (htmx) {
+      res.render("events/partials/archive-list", {
+        layout: false,
+        events: viewModel.events,
+      });
+      return;
+    }
+
+    res.render("events/archive", viewModel);
   }
 
   async toggleRSVP(
@@ -440,12 +649,7 @@ class EventController implements IEventController {
     const result = await this.rsvpService.toggleRSVP(eventId, currentUser);
     if (result.ok === false) {
       const error = result.value;
-      const status =
-        error.name === "EventNotFound"
-          ? 404
-          : error.name === "UnexpectedDependencyError"
-            ? 500
-            : 400;
+      const status = this.mapRsvpErrorStatus(error);
 
       res.status(status).json({
         error: error.message,
@@ -455,13 +659,51 @@ class EventController implements IEventController {
 
     res.json(result.value);
   }
+
+  async toggleRSVPInline(
+    res: Response,
+    eventId: number,
+    currentUser: IAuthenticatedUserSession,
+  ): Promise<void> {
+    const result = await this.rsvpService.toggleRSVP(eventId, currentUser);
+
+    if (result.ok === false) {
+      const error = result.value;
+      const status = this.mapRsvpErrorStatus(error);
+
+      res.status(status);
+      await this.renderRsvpTogglePartial(
+        res,
+        eventId,
+        currentUser.userId,
+        error.message,
+      );
+      return;
+    }
+
+    await this.renderRsvpTogglePartial(
+      res,
+      eventId,
+      currentUser.userId,
+      null,
+    );
+  }
 }
 
 export function CreateEventController(
   eventService: IEventService,
   savedEventService: SavedEventService,
   rsvpService: IRSVPService,
+  attendeeListService: IAttendeeListService,
+  eventCommentsService: IEventCommentsService,
   logger: ILoggingService,
 ): IEventController {
-  return new EventController(eventService, savedEventService, rsvpService, logger);
+  return new EventController(
+    eventService,
+    savedEventService,
+    rsvpService,
+    attendeeListService,
+    eventCommentsService,
+    logger,
+  );
 }

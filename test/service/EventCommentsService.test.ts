@@ -8,6 +8,7 @@ describe("EventCommentsService", () => {
     const service = CreateEventCommentsService(
       repository,
       repository,
+      repository,
       CreateInMemoryUserRepository(),
     );
 
@@ -29,6 +30,7 @@ describe("EventCommentsService", () => {
     const service = CreateEventCommentsService(
       repository,
       repository,
+      repository,
       CreateInMemoryUserRepository(),
     );
 
@@ -40,9 +42,27 @@ describe("EventCommentsService", () => {
     }
   });
 
+  it("rejects empty comments", async () => {
+    const repository = CreateInMemoryEventRepository();
+    const service = CreateEventCommentsService(
+      repository,
+      repository,
+      repository,
+      CreateInMemoryUserRepository(),
+    );
+
+    const result = await service.createComment("user-reader", "1", "   ");
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.value.name).toBe("InvalidCommentData");
+    }
+  });
+
   it("allows a user to delete their own comment", async () => {
     const repository = CreateInMemoryEventRepository();
     const service = CreateEventCommentsService(
+      repository,
       repository,
       repository,
       CreateInMemoryUserRepository(),
@@ -61,6 +81,7 @@ describe("EventCommentsService", () => {
     const service = CreateEventCommentsService(
       repository,
       repository,
+      repository,
       CreateInMemoryUserRepository(),
     );
 
@@ -77,6 +98,7 @@ describe("EventCommentsService", () => {
     const service = CreateEventCommentsService(
       repository,
       repository,
+      repository,
       CreateInMemoryUserRepository(),
     );
 
@@ -90,6 +112,7 @@ describe("EventCommentsService", () => {
     const service = CreateEventCommentsService(
       repository,
       repository,
+      repository,
       CreateInMemoryUserRepository(),
     );
 
@@ -97,7 +120,7 @@ describe("EventCommentsService", () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.value.name).toBe("AuthorizationRequired");
+      expect(result.value.name).toBe("UnauthorizedCommentDeletion");
     }
   });
 });

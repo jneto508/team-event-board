@@ -17,6 +17,7 @@ import { SavedEventService } from "./service/SavedEventService";
 import { CreateEventController } from "./controller/EventController";
 import { CreateEventCommentsService } from "./service/EventCommentsService";
 import { CreateEventCommentsController } from "./controller/EventCommentsController";
+import { CreateAttendeeListService } from "./service/AttendeeListService";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
     const resolvedLogger = logger ?? CreateLoggingService();
@@ -40,6 +41,12 @@ export function createComposedApp(logger?: ILoggingService): IApp {
     const eventService = CreateEventService(eventRepository);
     const rsvpService = CreateRSVPService(eventRepository, eventRepository);
     const savedEventService = new SavedEventService(savedEventRepository, eventRepository);
+    const eventCommentsService = CreateEventCommentsService(
+        eventRepository,
+        eventRepository,
+        eventRepository,
+        authUsers,
+    );
 
     // RSVP dashboard wiring
     const memberRsvpsDashboardService = CreateMemberRsvpsDashboardService(
@@ -52,21 +59,24 @@ export function createComposedApp(logger?: ILoggingService): IApp {
         resolvedLogger,
     );
 
-    const eventController = CreateEventController(
-        eventService,
-        savedEventService,
-        rsvpService,
-        resolvedLogger,
-    );
-
-    // Event comments wiring
-    const eventCommentsService = CreateEventCommentsService(
+    const attendeeListService = CreateAttendeeListService(
         eventRepository,
         eventRepository,
         authUsers,
     );
+    const eventController = CreateEventController(
+        eventService,
+        savedEventService,
+        rsvpService,
+        attendeeListService,
+        eventCommentsService,
+        resolvedLogger,
+    );
+
+    // Event comments wiring
     const eventCommentsController = CreateEventCommentsController(
         eventCommentsService,
+        savedEventService,
         resolvedLogger,
     );
 

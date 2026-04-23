@@ -1,6 +1,6 @@
 import { Err, Ok, Result } from "../lib/result";
 import { IEvent } from "../model/Event";
-import { RSVPError, EventError, InvalidRSVPData } from "./errors";
+import { RSVPClosed, RSVPError, EventError, OrganizerCannotRSVP, RSVPForbidden } from "./errors";
 import { RSVPStatus } from "../model/RSVP";
 import { IAuthenticatedUserSession } from "../session/AppSession";
 import { IEventRepository, IRSVPRepository } from "../repository/EventRepository";
@@ -34,16 +34,16 @@ export class RSVPService implements IRSVPService {
         now: Date,
     ): ToggleRSVPError | null {
         if (user.role !== "user") {
-            return InvalidRSVPData("Only members can RSVP to events.");
+            return RSVPForbidden("Only members can RSVP to events.");
         }
         if (event.organizerId === user.userId) {
-            return InvalidRSVPData("Organizers cannot RSVP to their own events.");
+            return OrganizerCannotRSVP("Organizers cannot RSVP to their own events.");
         }
         if (event.status === "cancelled") {
-            return InvalidRSVPData("Cancelled events cannot accept RSVPs.");
+            return RSVPClosed("Cancelled events cannot accept RSVPs.");
         }
         if (event.status === "past" || event.endDateTime <= now) {
-            return InvalidRSVPData("Past events cannot accept RSVPs.");
+            return RSVPClosed("Past events cannot accept RSVPs.");
         }
 
         return null;
@@ -113,29 +113,41 @@ export class RSVPService implements IRSVPService {
             return Err(eventResult.value);
         }
 
-        const eligibilityError = this.validateEligibility(
-            eventResult.value,
-            user,
-            now,
-        );
-        if (eligibilityError) {
-            return Err(eligibilityError);
-        }
-
         const existingResult = await this.rsvpRepository.getRSVPByEventAndUser(
             eventId,
             user.userId,
         );
 
         if (existingResult.ok) {
-            const nextStatusResult =
-                existingResult.value.status === "cancelled"
-                    ? await this.resolveActiveStatus(
-                          eventId,
-                          eventResult.value.capacity,
-                      )
-                    : Ok<RSVPStatus>("cancelled");
+            if (existingResult.value.status !== "cancelled") {
+                const updatedResult = await this.rsvpRepository.updateRSVPStatus(
+                    existingResult.value.id,
+                    "cancelled",
+                );
+                if (updatedResult.ok === false) {
+                    return Err(updatedResult.value);
+                }
 
+                return this.buildToggleResult(
+                    eventId,
+                    user.userId,
+                    updatedResult.value.status,
+                );
+            }
+
+            const eligibilityError = this.validateEligibility(
+                eventResult.value,
+                user,
+                now,
+            );
+            if (eligibilityError) {
+                return Err(eligibilityError);
+            }
+
+            const nextStatusResult = await this.resolveActiveStatus(
+                eventId,
+                eventResult.value.capacity,
+            );
             if (nextStatusResult.ok === false) {
                 return Err(nextStatusResult.value);
             }
@@ -148,11 +160,16 @@ export class RSVPService implements IRSVPService {
                 return Err(updatedResult.value);
             }
 
-            return this.buildToggleResult(
-                eventId,
-                user.userId,
-                updatedResult.value.status,
-            );
+            return this.buildToggleResult(eventId, user.userId, updatedResult.value.status);
+        }
+
+        const eligibilityError = this.validateEligibility(
+            eventResult.value,
+            user,
+            now,
+        );
+        if (eligibilityError) {
+            return Err(eligibilityError);
         }
 
         const initialStatusResult = await this.resolveActiveStatus(

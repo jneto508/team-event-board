@@ -1,20 +1,26 @@
 export type EventError =
     | {name: "EventNotFound"; message: string}
     | {name: "InvalidEventData"; message: string}
+    | {name: "InvalidEventState"; message: string}
     | {name: "ValidationError"; message: string}
     | {name: "UnexpectedDependencyError"; message: string}
     | {name: "InvalidSearchInput"; message: string}
+    | { name: "InvalidSaveOperation"; message: string }
     | {name: "Forbidden"; message: string};
 
 export type RSVPError = 
     | {name: "RSVPNotFound"; message: string}
     | {name: "InvalidRSVPData"; message: string}
+    | {name: "RSVPForbidden"; message: string}
+    | {name: "OrganizerCannotRSVP"; message: string}
+    | {name: "RSVPClosed"; message: string}
     | {name: "ValidationError"; message: string}
     | {name: "UnexpectedDependencyError"; message: string};
 
 export type CommentError =
     | {name: "CommentNotFound"; message: string}
     | {name: "InvalidCommentData"; message: string}
+    | {name: "UnauthorizedCommentDeletion"; message: string}
     | {name: "ValidationError"; message: string}
     | {name: "AuthorizationRequired"; message: string}
     | {name: "UnexpectedDependencyError"; message: string}
@@ -45,6 +51,11 @@ export const RSVPUnexpectedDependencyError = (message: string): RSVPError => ({
     message
 });
 
+export const InvalidEventState = (message: string): EventError => ({
+    name: "InvalidEventState",
+    message
+});
+
 export const Forbidden = (message: string): EventError => ({
     name: "Forbidden",
     message
@@ -60,6 +71,21 @@ export const InvalidRSVPData = (message: string): RSVPError => ({
     message
 });
 
+export const RSVPForbidden = (message: string): RSVPError => ({
+    name: "RSVPForbidden",
+    message
+});
+
+export const OrganizerCannotRSVP = (message: string): RSVPError => ({
+    name: "OrganizerCannotRSVP",
+    message
+});
+
+export const RSVPClosed = (message: string): RSVPError => ({
+    name: "RSVPClosed",
+    message
+});
+
 export const CommentNotFound = (message: string): CommentError => ({
     name: "CommentNotFound",
     message
@@ -70,10 +96,20 @@ export const InvalidCommentData = (message: string): CommentError => ({
     message
 });
 
+export const UnauthorizedCommentDeletion = (message: string): CommentError => ({
+    name: "UnauthorizedCommentDeletion",
+    message
+});
+
 export const InvalidSearchInput = (message: string): EventError => ({
     name: "InvalidSearchInput",
     message
 });
+
+export const InvalidSaveOperation = (message: string): EventError => ({
+    name: "InvalidSaveOperation",
+    message,
+  });
 
 export const CommentAuthorizationRequired = (message: string): CommentError => ({
     name: "AuthorizationRequired",
