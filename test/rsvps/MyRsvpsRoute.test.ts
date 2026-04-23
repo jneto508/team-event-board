@@ -82,6 +82,32 @@ describe("GET /my-rsvps", () => {
     expect(cancelResponse.text).toContain("Spring Hack Night");
     expect(cancelResponse.text).toContain("cancelled");
     expect(cancelResponse.text).toContain("Design Critique Circle");
-    expect(cancelResponse.text).toContain("Cancel RSVP");
+    expect(cancelResponse.text).toContain("Leave Waitlist");
+  });
+
+  it("lets a waitlisted member leave the waitlist from the dashboard inline", async () => {
+    const app = createComposedApp().getExpressApp();
+    const agent = request.agent(app);
+
+    await agent.post("/login").type("form").send({
+      email: "user@app.test",
+      password: "password123",
+    });
+
+    const dashboardResponse = await agent.get("/my-rsvps");
+    expect(dashboardResponse.status).toBe(200);
+    expect(dashboardResponse.text).toContain("Design Critique Circle");
+    expect(dashboardResponse.text).toContain("Leave Waitlist");
+
+    const cancelResponse = await agent
+      .post("/events/2/rsvp-toggle")
+      .set("HX-Request", "true")
+      .set("HX-Target", "rsvp-dashboard-sections");
+
+    expect(cancelResponse.status).toBe(200);
+    expect(cancelResponse.text).toContain('id="rsvp-dashboard-sections"');
+    expect(cancelResponse.text).toContain("Design Critique Circle");
+    expect(cancelResponse.text).toContain("cancelled");
+    expect(cancelResponse.text).not.toContain("Leave Waitlist");
   });
 });

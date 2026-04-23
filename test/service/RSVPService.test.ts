@@ -279,4 +279,24 @@ describe("RSVPService.toggleRSVP", () => {
       expect(pastResult.value.name).toBe("RSVPClosed");
     }
   });
+
+  it("allows an existing waitlisted RSVP to be cancelled", async () => {
+    const repository = CreateInMemoryEventRepository();
+    const service = CreateRSVPService(repository, repository);
+
+    const result = await service.toggleRSVP(
+      2,
+      buildUser({
+        userId: "user-reader",
+        email: "user@app.test",
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.rsvpStatus).toBe("cancelled");
+      expect(result.value.attendeeCount).toBe(0);
+      expect(result.value.waitlistCount).toBe(0);
+    }
+  });
 });
