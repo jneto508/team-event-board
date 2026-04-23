@@ -44,6 +44,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
     const eventCommentsService = CreateEventCommentsService(
         eventRepository,
         eventRepository,
+        eventRepository,
         authUsers,
     );
 

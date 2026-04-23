@@ -1,7 +1,7 @@
 import { Err, Ok, type Result } from "../lib/result";
 import type { IUserRepository } from "../auth/UserRepository";
 import type { IComment } from "../model/Comment";
-import type { ICommentRepository, IEventRepository } from "../repository/EventRepository";
+import type { ICommentRepository, IEventRepository, IRSVPRepository } from "../repository/EventRepository";
 import {
   CommentAuthorizationRequired,
   CommentNotFound,
@@ -9,6 +9,9 @@ import {
   UnauthorizedCommentDeletion,
   type CommentError,
 } from "./errors";
+import type { IEvent, EventStatus } from "../model/Event";
+import type { IRSVP, RSVPStatus } from "../model/RSVP";
+
 
 export type EventCommentView = {
   id: number;
@@ -29,6 +32,12 @@ export type PublishedEventSummary = {
   startDateTime: Date;
   endDateTime: Date;
   organizerId: string;
+  status: EventStatus;
+  capacity: number;
+  attendeeCount: number;
+  waitlistCount: number;
+  viewerRsvpStatus: RSVPStatus | null;
+  canToggleRsvp: boolean;
 };
 
 export type EventCommentsPage = {
@@ -37,11 +46,21 @@ export type EventCommentsPage = {
 };
 
 export interface IEventCommentsService {
-  listPublishedEvents(): Promise<Result<PublishedEventSummary[], CommentError>>;
+  listPublishedEvents(
+    viewerUserId?: string,
+  ): Promise<Result<PublishedEventSummary[], CommentError>>;
   getEventCommentsPage(
     eventId: string,
     viewerUserId?: string,
   ): Promise<Result<EventCommentsPage, CommentError>>;
+  enrichEventsForViewer(
+    events: IEvent[],
+    viewerUserId?: string,
+  ): Promise<Result<PublishedEventSummary[], CommentError>>;
+  getEventViewModel(
+    eventId: number,
+    viewerUserId?: string,
+  ): Promise<Result<PublishedEventSummary, CommentError>>;
   createComment(
     userId: string,
     eventId: string,
@@ -64,6 +83,7 @@ function CommentEventNotFound(message: string): CommentError {
 class EventCommentsService implements IEventCommentsService {
   constructor(
     private readonly events: IEventRepository,
+    private readonly rsvps: IRSVPRepository,
     private readonly comments: ICommentRepository,
     private readonly users: IUserRepository,
   ) {}
@@ -105,28 +125,105 @@ class EventCommentsService implements IEventCommentsService {
     });
   }
 
-  async listPublishedEvents(): Promise<Result<PublishedEventSummary[], CommentError>> {
+  private async canToggleRsvp(
+    event: IEvent,
+    viewerUserId?: string,
+  ): Promise<boolean> {
+    if (!viewerUserId) return false;
+
+    const viewerResult = await this.users.findById(viewerUserId);
+    if (viewerResult.ok === false || !viewerResult.value) return false;
+
+    if (viewerResult.value.role !== "user") return false;
+    if (event.organizerId === viewerUserId) return false;
+    if (event.status === "cancelled" || event.status === "past") return false;
+    if (event.endDateTime <= new Date()) return false;
+
+    return true;
+  }
+
+  private async toPublishedEventSummary(
+    event: IEvent,
+    viewerUserId?: string,
+  ): Promise<Result<PublishedEventSummary, CommentError>> {
+    const rsvpsResult = await this.rsvps.listRSVPsByEvent(event.id);
+    if (rsvpsResult.ok === false) {
+      return Err(UnexpectedCommentDependencyError(rsvpsResult.value.message));
+    }
+
+    const attendeeCount = rsvpsResult.value.filter((rsvp) => rsvp.status === "going").length;
+    const waitlistCount = rsvpsResult.value.filter((rsvp) => rsvp.status === "waitlisted").length;
+
+    let viewerRsvpStatus: RSVPStatus | null = null;
+    if (viewerUserId) {
+      const viewerRsvpResult = await this.rsvps.getRSVPByEventAndUser(event.id, viewerUserId);
+      if (viewerRsvpResult.ok) {
+        viewerRsvpStatus = viewerRsvpResult.value.status;
+      } else if (viewerRsvpResult.value.name !== "RSVPNotFound") {
+        return Err(UnexpectedCommentDependencyError(viewerRsvpResult.value.message));
+      }
+    }
+
+    return Ok({
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      category: event.category,
+      startDateTime: event.startDateTime,
+      endDateTime: event.endDateTime,
+      organizerId: event.organizerId,
+      status: event.status,
+      capacity: event.capacity,
+      attendeeCount,
+      waitlistCount,
+      viewerRsvpStatus,
+      canToggleRsvp: await this.canToggleRsvp(event, viewerUserId),
+    });
+  }
+
+  async enrichEventsForViewer(
+    events: IEvent[],
+    viewerUserId?: string,
+  ): Promise<Result<PublishedEventSummary[], CommentError>> {
+    const summaries: PublishedEventSummary[] = [];
+
+    for (const event of events) {
+      const summaryResult = await this.toPublishedEventSummary(event, viewerUserId);
+      if (summaryResult.ok === false) {
+        return Err(summaryResult.value);
+      }
+      summaries.push(summaryResult.value);
+    }
+
+    return Ok(summaries);
+  }
+
+  async getEventViewModel(
+    eventId: number,
+    viewerUserId?: string,
+  ): Promise<Result<PublishedEventSummary, CommentError>> {
+    const eventResult = await this.events.getEventById(eventId);
+    if (eventResult.ok === false) {
+      return Err(CommentEventNotFound(eventResult.value.message));
+    }
+
+    return this.toPublishedEventSummary(eventResult.value, viewerUserId);
+  }
+
+  async listPublishedEvents(viewerUserId?: string): Promise<Result<PublishedEventSummary[], CommentError>> {
     const result = await this.events.listEvents("published");
     if (result.ok === false) {
       return Err(UnexpectedCommentDependencyError(result.value.message));
     }
 
-    return Ok(
-      result.value
-        .slice()
-        .sort((left, right) => left.startDateTime.getTime() - right.startDateTime.getTime())
-        .map((event) => ({
-          id: event.id,
-          title: event.title,
-          description: event.description,
-          location: event.location,
-          category: event.category,
-          startDateTime: event.startDateTime,
-          endDateTime: event.endDateTime,
-          organizerId: event.organizerId,
-        })),
-    );
+    const sorted = result.value
+      .slice()
+      .sort((left, right) => left.startDateTime.getTime() - right.startDateTime.getTime());
+
+    return this.enrichEventsForViewer(sorted, viewerUserId);
   }
+
 
   async getEventCommentsPage(
     eventId: string,
@@ -156,19 +253,19 @@ class EventCommentsService implements IEventCommentsService {
       views.push(viewResult.value);
     }
 
+    const eventViewResult = await this.toPublishedEventSummary(
+      eventResult.value,
+      viewerUserId,
+    );
+    if (eventViewResult.ok === false) {
+      return Err(eventViewResult.value);
+    }
+
     return Ok({
-      event: {
-        id: eventResult.value.id,
-        title: eventResult.value.title,
-        description: eventResult.value.description,
-        location: eventResult.value.location,
-        category: eventResult.value.category,
-        startDateTime: eventResult.value.startDateTime,
-        endDateTime: eventResult.value.endDateTime,
-        organizerId: eventResult.value.organizerId,
-      },
+      event: eventViewResult.value,
       comments: views,
     });
+
   }
 
   async createComment(
@@ -264,8 +361,9 @@ class EventCommentsService implements IEventCommentsService {
 
 export function CreateEventCommentsService(
   events: IEventRepository,
+  rsvps: IRSVPRepository,
   comments: ICommentRepository,
   users: IUserRepository,
 ): IEventCommentsService {
-  return new EventCommentsService(events, comments, users);
+  return new EventCommentsService(events, rsvps, comments, users);
 }
