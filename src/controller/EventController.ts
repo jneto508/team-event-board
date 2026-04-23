@@ -64,6 +64,7 @@ export interface IEventController {
     res: Response,
     session: IAppBrowserSession,
     category?: string,
+    htmx?: boolean,
   ): Promise<void>;
   showSavedEvents(
     res: Response,
@@ -570,6 +571,7 @@ class EventController implements IEventController {
     res: Response,
     session: IAppBrowserSession,
     category?: string,
+    htmx: boolean = false,
   ): Promise<void> {
     this.logger.info("Showing archived events page");
 
@@ -597,13 +599,23 @@ class EventController implements IEventController {
       new Set(result.value.map((event) => event.category)),
     ).sort();
 
-    res.render("events/archive", {
+    const viewModel = {
       session,
       pageError: null,
       events: result.value,
       categories,
       selectedCategory: String(category ?? "").trim().toLowerCase(),
-    });
+    };
+
+    if (htmx) {
+      res.render("events/partials/archive-list", {
+        layout: false,
+        events: viewModel.events,
+      });
+      return;
+    }
+
+    res.render("events/archive", viewModel);
   }
 
   async toggleRSVP(
