@@ -2,8 +2,10 @@ import request from "supertest";
 import { createComposedApp } from "../../src/composition";
 
 describe("Event comments routes", () => {
+  type TestAgent = ReturnType<typeof request.agent>;
+
   async function login(
-    agent: request.SuperAgentTest,
+    agent: TestAgent,
     email: string,
   ): Promise<void> {
     await agent.post("/login").type("form").send({

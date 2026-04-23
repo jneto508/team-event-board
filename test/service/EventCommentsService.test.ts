@@ -8,6 +8,7 @@ describe("EventCommentsService", () => {
     const service = CreateEventCommentsService(
       repository,
       repository,
+      repository,
       CreateInMemoryUserRepository(),
     );
 
@@ -29,6 +30,7 @@ describe("EventCommentsService", () => {
     const service = CreateEventCommentsService(
       repository,
       repository,
+      repository,
       CreateInMemoryUserRepository(),
     );
 
@@ -43,6 +45,7 @@ describe("EventCommentsService", () => {
   it("rejects empty comments", async () => {
     const repository = CreateInMemoryEventRepository();
     const service = CreateEventCommentsService(
+      repository,
       repository,
       repository,
       CreateInMemoryUserRepository(),
@@ -61,6 +64,7 @@ describe("EventCommentsService", () => {
     const service = CreateEventCommentsService(
       repository,
       repository,
+      repository,
       CreateInMemoryUserRepository(),
     );
 
@@ -75,6 +79,7 @@ describe("EventCommentsService", () => {
   it("allows an organizer to delete any comment on their event", async () => {
     const repository = CreateInMemoryEventRepository();
     const service = CreateEventCommentsService(
+      repository,
       repository,
       repository,
       CreateInMemoryUserRepository(),
@@ -93,6 +98,7 @@ describe("EventCommentsService", () => {
     const service = CreateEventCommentsService(
       repository,
       repository,
+      repository,
       CreateInMemoryUserRepository(),
     );
 
@@ -104,6 +110,7 @@ describe("EventCommentsService", () => {
   it("blocks unrelated users from deleting comments", async () => {
     const repository = CreateInMemoryEventRepository();
     const service = CreateEventCommentsService(
+      repository,
       repository,
       repository,
       CreateInMemoryUserRepository(),
