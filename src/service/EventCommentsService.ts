@@ -11,6 +11,7 @@ import {
 } from "./errors";
 import type { IEvent, EventStatus } from "../model/Event";
 import type { IRSVP, RSVPStatus } from "../model/RSVP";
+import type { RSVPError } from "./errors";
 
 
 export type EventCommentView = {
@@ -146,24 +147,45 @@ class EventCommentsService implements IEventCommentsService {
     event: IEvent,
     viewerUserId?: string,
   ): Promise<Result<PublishedEventSummary, CommentError>> {
+  
     const rsvpsResult = await this.rsvps.listRSVPsByEvent(event.id);
-    if (rsvpsResult.ok === false) {
-      return Err(UnexpectedCommentDependencyError(rsvpsResult.value.message));
+    if (!rsvpsResult.ok) {
+      const error = rsvpsResult.value as RSVPError;
+      return Err(
+        UnexpectedCommentDependencyError(error.message)
+      );
     }
-
-    const attendeeCount = rsvpsResult.value.filter((rsvp) => rsvp.status === "going").length;
-    const waitlistCount = rsvpsResult.value.filter((rsvp) => rsvp.status === "waitlisted").length;
-
+  
+    const attendeeCount = rsvpsResult.value.filter(
+      (rsvp) => rsvp.status === "going"
+    ).length;
+  
+    const waitlistCount = rsvpsResult.value.filter(
+      (rsvp) => rsvp.status === "waitlisted"
+    ).length;
+  
     let viewerRsvpStatus: RSVPStatus | null = null;
+  
     if (viewerUserId) {
-      const viewerRsvpResult = await this.rsvps.getRSVPByEventAndUser(event.id, viewerUserId);
+      const viewerRsvpResult = await this.rsvps.getRSVPByEventAndUser(
+        event.id,
+        viewerUserId
+      );
+  
       if (viewerRsvpResult.ok) {
         viewerRsvpStatus = viewerRsvpResult.value.status;
-      } else if (viewerRsvpResult.value.name !== "RSVPNotFound") {
-        return Err(UnexpectedCommentDependencyError(viewerRsvpResult.value.message));
+      } else {
+        const error = viewerRsvpResult.value as RSVPError;
+      
+        if (error.name !== "RSVPNotFound") {
+          return Err(
+            UnexpectedCommentDependencyError(error.message)
+          );
+        }
       }
+      
     }
-
+  
     return Ok({
       id: event.id,
       title: event.title,
