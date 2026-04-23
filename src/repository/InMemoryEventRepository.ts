@@ -120,6 +120,18 @@ const DEMO_RSVPS: IRSVP[] = [
     status: "going",
     createdAt: new Date("2026-03-05T10:00:00.000Z"),
   }),
+  createRSVP(5, {
+    eventId: 1,
+    userId: "user-member2",
+    status: "going",
+    createdAt: new Date("2026-03-20T11:00:00.000Z"),
+  }),
+  createRSVP(6, {
+    eventId: 1,
+    userId: "user-admin",
+    status: "waitlisted",
+    createdAt: new Date("2026-03-20T12:00:00.000Z"),
+  }),
 ];
 
 const DEMO_COMMENTS: IComment[] = [
