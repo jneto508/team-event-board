@@ -93,6 +93,19 @@ const DEMO_EVENTS: IEvent[] = [
     createdAt: new Date("2026-02-25T14:00:00.000Z"),
     updatedAt: new Date("2026-04-01T13:00:00.000Z"),
   }),
+  createEvent(5, {
+    title: "Organizer Planning Session",
+    description: "Draft planning session for organizers before publication.",
+    location: "Conference Room A",
+    category: "planning",
+    status: "draft",
+    capacity: 12,
+    startDateTime: new Date("2026-05-20T17:00:00.000Z"),
+    endDateTime: new Date("2026-05-20T18:30:00.000Z"),
+    organizerId: "user-staff",
+    createdAt: new Date("2026-04-10T12:00:00.000Z"),
+    updatedAt: new Date("2026-04-10T12:00:00.000Z"),
+  }),
 ];
 
 const DEMO_RSVPS: IRSVP[] = [
