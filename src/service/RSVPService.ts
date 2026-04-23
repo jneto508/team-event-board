@@ -113,29 +113,41 @@ export class RSVPService implements IRSVPService {
             return Err(eventResult.value);
         }
 
-        const eligibilityError = this.validateEligibility(
-            eventResult.value,
-            user,
-            now,
-        );
-        if (eligibilityError) {
-            return Err(eligibilityError);
-        }
-
         const existingResult = await this.rsvpRepository.getRSVPByEventAndUser(
             eventId,
             user.userId,
         );
 
         if (existingResult.ok) {
-            const nextStatusResult =
-                existingResult.value.status === "cancelled"
-                    ? await this.resolveActiveStatus(
-                          eventId,
-                          eventResult.value.capacity,
-                      )
-                    : Ok<RSVPStatus>("cancelled");
+            if (existingResult.value.status !== "cancelled") {
+                const updatedResult = await this.rsvpRepository.updateRSVPStatus(
+                    existingResult.value.id,
+                    "cancelled",
+                );
+                if (updatedResult.ok === false) {
+                    return Err(updatedResult.value);
+                }
 
+                return this.buildToggleResult(
+                    eventId,
+                    user.userId,
+                    updatedResult.value.status,
+                );
+            }
+
+            const eligibilityError = this.validateEligibility(
+                eventResult.value,
+                user,
+                now,
+            );
+            if (eligibilityError) {
+                return Err(eligibilityError);
+            }
+
+            const nextStatusResult = await this.resolveActiveStatus(
+                eventId,
+                eventResult.value.capacity,
+            );
             if (nextStatusResult.ok === false) {
                 return Err(nextStatusResult.value);
             }
@@ -148,11 +160,16 @@ export class RSVPService implements IRSVPService {
                 return Err(updatedResult.value);
             }
 
-            return this.buildToggleResult(
-                eventId,
-                user.userId,
-                updatedResult.value.status,
-            );
+            return this.buildToggleResult(eventId, user.userId, updatedResult.value.status);
+        }
+
+        const eligibilityError = this.validateEligibility(
+            eventResult.value,
+            user,
+            now,
+        );
+        if (eligibilityError) {
+            return Err(eligibilityError);
         }
 
         const initialStatusResult = await this.resolveActiveStatus(

@@ -63,7 +63,7 @@ const DEMO_EVENTS: IEvent[] = [
     capacity: 18,
     startDateTime: new Date("2026-05-01T22:00:00.000Z"),
     endDateTime: new Date("2026-05-02T00:00:00.000Z"),
-    organizerId: "user-reader",
+    organizerId: "user-staff",
     createdAt: new Date("2026-03-12T16:00:00.000Z"),
     updatedAt: new Date("2026-03-12T16:00:00.000Z"),
   }),
