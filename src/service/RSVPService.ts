@@ -1,6 +1,6 @@
 import { Err, Ok, Result } from "../lib/result";
 import { IEvent } from "../model/Event";
-import { RSVPError, EventError, InvalidRSVPData } from "./errors";
+import { RSVPClosed, RSVPError, EventError, OrganizerCannotRSVP, RSVPForbidden } from "./errors";
 import { RSVPStatus } from "../model/RSVP";
 import { IAuthenticatedUserSession } from "../session/AppSession";
 import { IEventRepository, IRSVPRepository } from "../repository/EventRepository";
@@ -34,16 +34,16 @@ export class RSVPService implements IRSVPService {
         now: Date,
     ): ToggleRSVPError | null {
         if (user.role !== "user") {
-            return InvalidRSVPData("Only members can RSVP to events.");
+            return RSVPForbidden("Only members can RSVP to events.");
         }
         if (event.organizerId === user.userId) {
-            return InvalidRSVPData("Organizers cannot RSVP to their own events.");
+            return OrganizerCannotRSVP("Organizers cannot RSVP to their own events.");
         }
         if (event.status === "cancelled") {
-            return InvalidRSVPData("Cancelled events cannot accept RSVPs.");
+            return RSVPClosed("Cancelled events cannot accept RSVPs.");
         }
         if (event.status === "past" || event.endDateTime <= now) {
-            return InvalidRSVPData("Past events cannot accept RSVPs.");
+            return RSVPClosed("Past events cannot accept RSVPs.");
         }
 
         return null;

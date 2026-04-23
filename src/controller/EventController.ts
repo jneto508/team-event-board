@@ -4,8 +4,8 @@ import type {
   IAuthenticatedUserSession,
 } from "../session/AppSession";
 import type { IEventService } from "../service/EventService";
-import type { IRSVPService } from "../service/RSVPService";
-import type { EventError } from "../service/errors";
+import type { IRSVPService, ToggleRSVPError } from "../service/RSVPService";
+import type { EventError, RSVPError } from "../service/errors";
 import type { ILoggingService } from "../service/LoggingService";
 import type { SavedEventService } from "../service/SavedEventService";
 import type { UserRole } from "../auth/User";
@@ -138,6 +138,27 @@ class EventController implements IEventController {
     if (error.name === "Forbidden") return 403;
     if (error.name === "InvalidEventData" || error.name === "ValidationError" || error.name === "InvalidEventState")
       return 400;
+    return 500;
+  }
+
+  private mapRsvpErrorStatus(error: ToggleRSVPError | RSVPError): number {
+    if (error.name === "EventNotFound" || error.name === "RSVPNotFound") return 404;
+    if (
+      error.name === "Forbidden" ||
+      error.name === "RSVPForbidden" ||
+      error.name === "OrganizerCannotRSVP"
+    ) {
+      return 403;
+    }
+    if (error.name === "RSVPClosed") return 409;
+    if (
+      error.name === "InvalidEventData" ||
+      error.name === "InvalidEventState" ||
+      error.name === "InvalidRSVPData" ||
+      error.name === "ValidationError"
+    ) {
+      return 400;
+    }
     return 500;
   }
 
@@ -628,12 +649,7 @@ class EventController implements IEventController {
     const result = await this.rsvpService.toggleRSVP(eventId, currentUser);
     if (result.ok === false) {
       const error = result.value;
-      const status =
-        error.name === "EventNotFound"
-          ? 404
-          : error.name === "UnexpectedDependencyError"
-            ? 500
-            : 400;
+      const status = this.mapRsvpErrorStatus(error);
 
       res.status(status).json({
         error: error.message,
@@ -653,12 +669,7 @@ class EventController implements IEventController {
 
     if (result.ok === false) {
       const error = result.value;
-      const status =
-        error.name === "EventNotFound"
-          ? 404
-          : error.name === "UnexpectedDependencyError"
-            ? 500
-            : 400;
+      const status = this.mapRsvpErrorStatus(error);
 
       res.status(status);
       await this.renderRsvpTogglePartial(
