@@ -4,13 +4,28 @@
         <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h3><%= event.title %></h3>
-              <p><%= event.location %> · <%= event.category %></p>
-              <p><%= event.description %></p>
+              <h3 class="font-semibold text-slate-900"><%= event.title %></h3>
+              <p class="text-slate-500"><%= event.location %> · <%= event.category %></p>
+              <p class="text-slate-600"><%= event.description %></p>
+              <p class="text-sm text-slate-500 mb-0">
+                <%= event.startDateTime.toLocaleString() %>
+              </p>
             </div>
-  
-            <a href="/events/<%= event.id %>">View Event</a>
+
+            <a
+              href="/events/<%= event.id %>"
+              class="text-blue-700 no-underline hover:underline text-sm font-medium"
+            >
+              View Event
+            </a>
           </div>
+
+        <div class="mt-3">
+          <%- include("../events/partials/rsvp-toggle", {
+            event,
+            pageError: null
+          }) %>
+        </div>
   
           <div class="mt-2">
             <%- include("saveButton", {
