@@ -8,6 +8,7 @@ import type {
 } from "../service/EventCommentsService";
 import { ILoggingService } from "../service/LoggingService";
 import type { CommentError } from "../service/errors";
+import { SavedEventService } from "../service/SavedEventService";
 
 function formatRelativeTime(date: Date, now: Date = new Date()): string {
   const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - date.getTime()) / 1000));
@@ -50,6 +51,7 @@ export interface IEventCommentsController {
 class EventCommentsController implements IEventCommentsController {
   constructor(
     private readonly service: IEventCommentsService,
+    private readonly savedEventService: SavedEventService,
     private readonly logger: ILoggingService,
   ) {}
 
@@ -68,11 +70,30 @@ class EventCommentsController implements IEventCommentsController {
     events: PublishedEventSummary[],
     pageError: string | null = null,
   ): Promise<void> {
+
+    const user = session.authenticatedUser;
+
+  let savedEventIds: number[] = [];
+
+  if (user) {
+    const savedResult = await this.savedEventService.getSavedEvents(
+      user.userId,
+      user.role
+    );
+
+    if (savedResult.ok) {
+      savedEventIds = savedResult.value.map((e: { id: number }) => e.id);
+    }
+  }
+
     res.render("home", {
       session,
       pageError,
+      savedEventIds,
       publishedEvents: events,
-    });
+    }); 
+
+
   }
 
   private async renderCommentsPanel(
@@ -246,7 +267,8 @@ class EventCommentsController implements IEventCommentsController {
 
 export function CreateEventCommentsController(
   service: IEventCommentsService,
+  savedEventSerivice: SavedEventService,
   logger: ILoggingService,
 ): IEventCommentsController {
-  return new EventCommentsController(service, logger);
+  return new EventCommentsController(service,savedEventSerivice,logger,);
 }

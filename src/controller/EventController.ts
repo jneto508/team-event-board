@@ -143,8 +143,13 @@ class EventController implements IEventController {
   ): Promise<void> {
     this.logger.info("Toggling saved event");
 
-    const result = await this.savedEventService.toggleSave(userId, eventId, userRole);
-  
+    
+    const result = await this.savedEventService.toggleSave(
+      userId,
+      eventId,
+      userRole
+    );
+
     if (!result.ok) {
       res.status(400).render("partials/error", {
         message: "Unable to toggle saved event.",
@@ -153,7 +158,11 @@ class EventController implements IEventController {
       return;
     }
   
-    res.redirect("/home");
+    res.render("partials/saveButton", {
+      eventId,
+      status: result.value,
+      layout: false,
+    });
   }
 
   async showSavedEvents(
@@ -206,8 +215,24 @@ class EventController implements IEventController {
       return;
     }
   
+    const user = session.authenticatedUser;
+  
+    let savedEventIds: number[] = [];
+  
+    if (user) {
+      const savedResult = await this.savedEventService.getSavedEvents(
+        user.userId,
+        user.role
+      );
+  
+      if (savedResult.ok) {
+        savedEventIds = savedResult.value.map((e: { id: number }) => e.id);
+      }
+    }
+  
     res.render("partials/eventList", {
       events: result.value,
+      savedEventIds, 
       layout: false,
     });
   }

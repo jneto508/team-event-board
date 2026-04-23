@@ -75,6 +75,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
     // Event comments wiring
     const eventCommentsController = CreateEventCommentsController(
         eventCommentsService,
+        savedEventService,
         resolvedLogger,
     );
 
