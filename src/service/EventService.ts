@@ -30,6 +30,11 @@ export interface IEventService {
         actingUserId: string,
         actingUserRole: UserRole,
     ): Promise<Result<void, EventError>>;
+    getEditableEvent(
+        id: number,
+        actingUserId: string,
+        actingUserRole: UserRole,
+    ): Promise<Result<IEvent, EventError>>;
 }
 
 function validateEventFields(data: CreateEventInput): EventError | null {
@@ -188,6 +193,29 @@ export class EventService implements IEventService {
         }
 
         return this.repository.updateEvent(id, data);
+    }
+
+    async getEditableEvent(
+        id: number,
+        actingUserId: string,
+        actingUserRole: UserRole,
+    ): Promise<Result<IEvent, EventError>> {
+        const found = await this.repository.getEventById(id);
+        if (!found.ok) return Err(EventNotFound(`Event with id ${id} not found.`));
+
+        const event = found.value;
+
+        if (actingUserRole === "user") {
+            return Err(Forbidden("Members are not allowed to edit events."));
+        }
+        if (event.status === "cancelled" || event.status === "past") {
+            return Err(InvalidEventState("Cannot edit a cancelled or past event."));
+        }
+        if (actingUserRole === "staff" && event.organizerId !== actingUserId) {
+            return Err(Forbidden("You can only edit events you organized."));
+        }
+
+        return Ok(event);
     }
 
     async searchEvents(query: string): Promise<Result<IEvent[], EventError>> {
