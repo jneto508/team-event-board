@@ -477,43 +477,14 @@ class EventController implements IEventController {
   ): Promise<void> {
     this.logger.info(`Showing edit form for event ${eventId}`);
 
-    if (actingUserRole === "user") {
-      res.status(403).render("partials/error", {
-        message: "Members are not allowed to edit events.",
-        layout: false,
-      });
-      return;
-    }
-
-    const result = await this.eventService.getEventById(eventId, {
-      userId: actingUserId,
-      role: actingUserRole,
-    });
+    const result = await this.eventService.getEditableEvent(eventId, actingUserId, actingUserRole);
     if (!result.ok) {
-      res.status(404).render("partials/error", {
-        message: `Event ${eventId} not found.`,
-        layout: false,
-      });
+      const status = result.value.name === "EventNotFound" ? 404 : 403;
+      res.status(status).render("partials/error", { message: result.value.message, layout: false });
       return;
     }
 
     const event = result.value;
-
-    if (event.status === "cancelled" || event.status === "past") {
-      res.status(403).render("partials/error", {
-        message: "Cannot edit a cancelled or past event.",
-        layout: false,
-      });
-      return;
-    }
-
-    if (actingUserRole === "staff" && event.organizerId !== actingUserId) {
-      res.status(403).render("partials/error", {
-        message: "You can only edit events you organized.",
-        layout: false,
-      });
-      return;
-    }
 
     const pad = (d: Date) => d.toISOString().slice(0, 16);
 
