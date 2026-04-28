@@ -4,16 +4,74 @@ generator client {
 
 datasource db {
   provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
-// TODO: Define your project's data models here.
-// Example:
-//
-// model Item {
-//   id        Int      @id @default(autoincrement())
-//   title     String
-//   body      String
-//   status    String   @default("active")
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
+enum EventStatus {
+  draft
+  published
+  cancelled
+  past
+}
+
+enum RSVPStatus {
+  going
+  waitlisted
+  cancelled
+}
+
+model Event {
+  id            Int         @id @default(autoincrement())
+  title         String
+  description   String
+  location      String
+  category      String
+  capacity      Int?
+  status        EventStatus @default(draft)
+  startDateTime DateTime
+  endDateTime   DateTime
+  organizerId   String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  rsvps         RSVP[]
+  comments      Comment[]
+  savedBy       SavedEvent[]
+
+  @@index([organizerId])
+  @@index([status, endDateTime])
+  @@index([category, status])
+}
+
+model RSVP {
+  id        Int        @id @default(autoincrement())
+  eventId   Int
+  userId    String
+  status    RSVPStatus @default(going)
+  createdAt DateTime   @default(now())
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId, status])
+  @@index([eventId, status, createdAt])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, createdAt])
+  @@index([userId])
+}
+
+model SavedEvent {
+  userId  String
+  eventId Int
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eventId])
+  @@index([eventId])
+}
