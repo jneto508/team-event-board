@@ -453,45 +453,6 @@ class InMemoryEventRepository
       return Err(UnexpectedCommentDependencyError("Unable to delete comment."));
     }
   }
-
-  async searchPublishedEvents(
-    query: string
-  ): Promise<Result<IEvent[], EventError>> {
-    try {
-      const now = new Date();
-      const q = query.toLowerCase().trim();
-  
-      const events = this.events.filter((event) => {
-        const isPublished =
-          event.status === "published";
-  
-        const isUpcoming =
-          event.startDateTime > now;
-  
-        if (!isPublished || !isUpcoming) {
-          return false;
-        }
-  
-        if (q === "") {
-          return true;
-        }
-  
-        return (
-          event.title.toLowerCase().includes(q) ||
-          event.description.toLowerCase().includes(q) ||
-          event.location.toLowerCase().includes(q)
-        );
-      });
-  
-      return Ok(events);
-    } catch {
-      return Err(
-        UnexpectedEventDependencyError(
-          "Failed to search events."
-        )
-      );
-    }
-  }
 }
 
 export function CreateInMemoryEventRepository():

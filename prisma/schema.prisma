@@ -6,6 +6,19 @@ datasource db {
   provider = "sqlite"
 }
 
+enum EventStatus {
+  draft
+  published
+  cancelled
+  past
+}
+
+enum RSVPStatus {
+  going
+  waitlisted
+  cancelled
+}
+
 model Event {
   id            Int         @id @default(autoincrement())
   title         String
@@ -13,7 +26,7 @@ model Event {
   location      String
   category      String
   capacity      Int?
-  status        String @default("draft")
+  status        EventStatus @default(draft)
   startDateTime DateTime
   endDateTime   DateTime
   organizerId   String
@@ -32,7 +45,7 @@ model RSVP {
   id        Int        @id @default(autoincrement())
   eventId   Int
   userId    String
-  status    String @default("going")
+  status    RSVPStatus @default(going)
   createdAt DateTime   @default(now())
   event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
