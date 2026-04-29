@@ -48,6 +48,7 @@ export interface IEventController {
     },
     organizerId: string,
     session: IAppBrowserSession,
+    isHtmx: boolean,
   ): Promise<void>;
   toggleSave(res: Response, eventId: number, userId: string, userRole: string): Promise<void>;
   toggleRSVP(
@@ -111,6 +112,7 @@ export interface IEventController {
     actingUserId: string,
     actingUserRole: UserRole,
     session: IAppBrowserSession,
+    isHtmx: boolean,
   ): Promise<void>;
 }
 
@@ -436,6 +438,7 @@ class EventController implements IEventController {
     },
     organizerId: string,
     session: IAppBrowserSession,
+    isHtmx: boolean,
   ): Promise<void> {
     this.logger.info("Creating event from form");
     const result = await this.eventService.createEvent({
@@ -464,8 +467,12 @@ class EventController implements IEventController {
       res.status(500).render("partials/error", { message: "Unable to create event.", layout: false});
       return;
     }
-    
-    res.redirect("/home");
+
+    if (isHtmx) {
+      res.set("HX-Redirect", "/home").status(204).send();
+    } else {
+      res.redirect("/home");
+    }
   }
 
   async showEditEventForm(
@@ -532,6 +539,7 @@ class EventController implements IEventController {
     actingUserId: string,
     actingUserRole: UserRole,
     _session: IAppBrowserSession,
+    isHtmx: boolean,
   ): Promise<void> {
     this.logger.info(`Updating event ${eventId} from form`);
 
@@ -569,7 +577,11 @@ class EventController implements IEventController {
       return;
     }
 
-    res.redirect("/home");
+    if (isHtmx) {
+      res.set("HX-Redirect", "/home").status(204).send();
+    } else {
+      res.redirect("/home");
+    }
   }
 
   async showArchivePage(
