@@ -220,47 +220,33 @@ export class EventService implements IEventService {
 
     async searchEvents(query: string): Promise<Result<IEvent[], EventError>> {
         const archiveResult = await this.archiveExpiredEvents();
+      
         if (!archiveResult.ok) {
-            return Err(archiveResult.value as EventError);
+          return Err(archiveResult.value as EventError);
         }
-    
-        const result = await this.repository.getAllEvents();
-        if (!result.ok) {
-            return Err(result.value as EventError);
+      
+        if (typeof query !== "string") {
+          return Err(
+            InvalidSearchInput("Search query must be a string.")
+          );
         }
-    
-        const events = result.value;
-        const now = new Date();
-    
-        const q = query.toLowerCase().trim();
-    
+      
+        const q = query.trim();
+      
         if (q.length > 100) {
-            return Err(InvalidSearchInput("Search query too long."));
+          return Err(
+            InvalidSearchInput("Search query too long.")
+          );
         }
-    
+      
         if (/[^a-zA-Z0-9\s]/.test(q)) {
-            return Err(InvalidSearchInput("Invalid characters in search."));
+          return Err(
+            InvalidSearchInput("Invalid characters in search.")
+          );
         }
-    
-        const publishedUpcoming = events.filter((event) => {
-            return event.status === "published" && event.startDateTime > now;
-        });
-    
-        if (q === "") {
-            return Ok(publishedUpcoming);
-        }
-    
-        const filtered = publishedUpcoming.filter((event) => {
-            return (
-                event.title.toLowerCase().includes(q) ||
-                event.description.toLowerCase().includes(q) ||
-                event.location.toLowerCase().includes(q)
-            );
-        });
-    
-        return Ok(filtered);
-    }
-
+      
+        return this.repository.searchPublishedEvents(q);
+      }
     async getArchivedEvents(
         category?: string,
     ): Promise<Result<IEvent[], EventError>> {
