@@ -38,7 +38,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
 
     // Repository wiring
     const adapter = new PrismaBetterSqlite3({
-        url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
+        url: process.env.DATABASE_URL ?? "file:./prisma/prisma/dev.db",
     });
     const prisma = new PrismaClient({ adapter });
     const eventRepository = CreatePrismaEventRepository(prisma);
