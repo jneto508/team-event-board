@@ -149,6 +149,49 @@ class PrismaEventRepository implements IEventRepository {
     }
   }
 
+  async searchPublishedEvents(
+    query: string,
+  ): Promise<Result<IEvent[], EventError>> {
+    try {
+      const now = new Date();
+  
+      const rows = await this.prisma.event.findMany({
+        where: {
+          status: "published",
+          startDateTime: {
+            gt: now,
+          },
+          OR: [
+            {
+              title: {
+                contains: query,
+              },
+            },
+            {
+              description: {
+                contains: query,
+              },
+            },
+            {
+              location: {
+                contains: query,
+              },
+            },
+          ],
+        },
+        orderBy: {
+          startDateTime: "asc",
+        },
+      });
+  
+      return Ok(rows.map(toIEvent));
+    } catch {
+      return Err(
+        UnexpectedError("Failed to search events."),
+      );
+    }
+  }
+
   async listEvents(
     filterStatus: EventFilterStatus = "all",
   ): Promise<Result<IEvent[], EventError>> {

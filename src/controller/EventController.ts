@@ -476,18 +476,31 @@ class EventController implements IEventController {
     session: IAppBrowserSession,
   ): Promise<void> {
     this.logger.info(`Showing edit form for event ${eventId}`);
-
-    const result = await this.eventService.getEditableEvent(eventId, actingUserId, actingUserRole);
-    if (!result.ok) {
-      const status = result.value.name === "EventNotFound" ? 404 : 403;
-      res.status(status).render("partials/error", { message: result.value.message, layout: false });
+  
+    const result = await this.eventService.getEditableEvent(
+      eventId,
+      actingUserId,
+      actingUserRole,
+    );
+    if (!result.ok && this.isEventError(result.value)) {
+      const error = result.value;
+      const status = error.name === "EventNotFound" ? 404 : 403;
+  
+      res.status(status).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
       return;
     }
-
+    if (!result.ok) {
+      res.status(500).render("partials/error", {
+        message: "Unable to load event.",
+        layout: false,
+      });
+      return;
+    }
     const event = result.value;
-
     const pad = (d: Date) => d.toISOString().slice(0, 16);
-
     res.render("events/edit", {
       session,
       pageError: null,
