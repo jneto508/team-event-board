@@ -562,6 +562,7 @@ class ExpressApp implements IApp {
                     },
                     organizerId,
                     touchAppSession(store),
+                    this.isHtmxRequest(req),
                 );
             }),
         );
@@ -771,6 +772,7 @@ class ExpressApp implements IApp {
                     user.userId,
                     user.role,
                     touchAppSession(store),
+                    this.isHtmxRequest(req),
                 );
             }),
         );
