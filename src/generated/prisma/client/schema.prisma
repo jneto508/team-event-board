@@ -5,19 +5,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-}
-
-enum EventStatus {
-  draft
-  published
-  cancelled
-  past
-}
-
-enum RSVPStatus {
-  going
-  waitlisted
-  cancelled
+  url      = env("DATABASE_URL")
 }
 
 model Event {
@@ -27,7 +15,7 @@ model Event {
   location      String
   category      String
   capacity      Int?
-  status        EventStatus  @default(draft)
+  status        String       @default("draft")
   startDateTime DateTime
   endDateTime   DateTime
   organizerId   String
@@ -43,12 +31,12 @@ model Event {
 }
 
 model RSVP {
-  id        Int        @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   eventId   Int
   userId    String
-  status    RSVPStatus @default(going)
-  createdAt DateTime   @default(now())
-  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  status    String   @default("going")
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, userId])
   @@index([userId, status])

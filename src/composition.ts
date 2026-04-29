@@ -21,6 +21,7 @@ import { CreateEventController } from "./controller/EventController";
 import { CreateEventCommentsService } from "./service/EventCommentsService";
 import { CreateEventCommentsController } from "./controller/EventCommentsController";
 import { CreateAttendeeListService } from "./service/AttendeeListService";
+import { CreatePrismaSavedEventRepository } from "./repository/PrismaSavedEventRepository";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
     const resolvedLogger = logger ?? CreateLoggingService();
@@ -37,13 +38,10 @@ export function createComposedApp(logger?: ILoggingService): IApp {
     );
 
     // Repository wiring
-    const adapter = new PrismaBetterSqlite3({
-        url: process.env.DATABASE_URL ?? "file:./prisma/prisma/dev.db",
-    });
-    const prisma = new PrismaClient({ adapter });
+    const prisma = new PrismaClient();
+
     const eventRepository = CreatePrismaEventRepository(prisma);
-    const savedEventRepository = CreateInMemorySavedEventRepository();
-    const legacyRepository = CreateInMemoryEventRepository();
+    const savedEventRepository =CreatePrismaSavedEventRepository(prisma);
 
     // Event wiring
     const eventService = CreateEventService(eventRepository);

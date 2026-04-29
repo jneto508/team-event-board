@@ -6,7 +6,7 @@ describe("PrismaEventRepository comments", () => {
   const adapter = new PrismaBetterSqlite3({
     url: process.env.DATABASE_URL ?? "file:./prisma/prisma/dev.db",
   });
-  const prisma = new PrismaClient({ adapter });
+  const prisma = new PrismaClient();
   const repository = CreatePrismaEventRepository(prisma);
 
   afterAll(async () => {
