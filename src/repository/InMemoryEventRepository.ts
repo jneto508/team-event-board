@@ -63,7 +63,7 @@ const DEMO_EVENTS: IEvent[] = [
     capacity: 18,
     startDateTime: new Date("2026-05-01T22:00:00.000Z"),
     endDateTime: new Date("2026-05-02T00:00:00.000Z"),
-    organizerId: "user-staff",
+    organizerId: "user-reader",
     createdAt: new Date("2026-03-12T16:00:00.000Z"),
     updatedAt: new Date("2026-03-12T16:00:00.000Z"),
   }),
@@ -132,18 +132,6 @@ const DEMO_RSVPS: IRSVP[] = [
     userId: "user-reader",
     status: "going",
     createdAt: new Date("2026-03-05T10:00:00.000Z"),
-  }),
-  createRSVP(5, {
-    eventId: 1,
-    userId: "user-member2",
-    status: "going",
-    createdAt: new Date("2026-03-20T11:00:00.000Z"),
-  }),
-  createRSVP(6, {
-    eventId: 1,
-    userId: "user-admin",
-    status: "waitlisted",
-    createdAt: new Date("2026-03-20T12:00:00.000Z"),
   }),
 ];
 

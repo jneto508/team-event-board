@@ -1,11 +1,32 @@
-import { type PrismaClient, type Event as PrismaEvent } from "@prisma/client";
+import {
+  type PrismaClient,
+  type Event as PrismaEvent,
+  type RSVP as PrismaRSVP,
+  type Comment as PrismaComment,
+} from "../generated/prisma/client";
 import { Err, Ok, type Result } from "../lib/result";
 import { type EventStatus, type IEvent } from "../model/Event";
-import { EventNotFound, type EventError } from "../service/errors";
+import { type IRSVP, type RSVPStatus } from "../model/RSVP";
+import { type IComment } from "../model/Comment";
+import {
+  CommentNotFound,
+  EventNotFound,
+  InvalidRSVPData,
+  RSVPNotFound,
+  RSVPUnexpectedDependencyError,
+  type CommentError,
+  type EventError,
+  type RSVPError,
+} from "../service/errors";
 import type {
+  CreateCommentInput,
   CreateEventInput,
+  CreateRSVPInput,
   EventFilterStatus,
+  ICommentRepository,
   IEventRepository,
+  IRSVPRepository,
+  RSVPFilterStatus,
 } from "./EventRepository";
 
 function toIEvent(row: PrismaEvent): IEvent {
@@ -25,15 +46,41 @@ function toIEvent(row: PrismaEvent): IEvent {
   };
 }
 
-function toCapacity(capacity: number | undefined): number | null {
-  return capacity ? capacity : null;
+function toIRSVP(row: PrismaRSVP): IRSVP {
+  return {
+    id: row.id,
+    eventId: row.eventId,
+    userId: row.userId,
+    status: row.status as RSVPStatus,
+    createdAt: row.createdAt,
+  };
 }
 
-function UnexpectedError(message: string): EventError {
+function toIComment(row: PrismaComment): IComment {
+  return {
+    id: row.id,
+    eventId: row.eventId,
+    userId: row.userId,
+    content: row.content,
+    createdAt: row.createdAt,
+  };
+}
+
+function toCapacity(capacity: number | undefined): number | null {
+  return typeof capacity === "number" && capacity > 0 ? capacity : null;
+}
+
+function UnexpectedEventError(message: string): EventError {
   return { name: "UnexpectedDependencyError", message };
 }
 
-class PrismaEventRepository implements IEventRepository {
+function UnexpectedCommentError(message: string): CommentError {
+  return { name: "UnexpectedDependencyError", message };
+}
+
+class PrismaEventRepository
+  implements IEventRepository, IRSVPRepository, ICommentRepository
+{
   constructor(private readonly prisma: PrismaClient) {}
 
   async createEvent(
@@ -54,7 +101,7 @@ class PrismaEventRepository implements IEventRepository {
       });
       return Ok(toIEvent(row));
     } catch {
-      return Err(UnexpectedError("Failed to create event."));
+      return Err(UnexpectedEventError("Failed to create event."));
     }
   }
 
@@ -64,7 +111,7 @@ class PrismaEventRepository implements IEventRepository {
       if (!row) return Err(EventNotFound(`Event ${id} was not found.`));
       return Ok(toIEvent(row));
     } catch {
-      return Err(UnexpectedError("Failed to load event."));
+      return Err(UnexpectedEventError("Failed to load event."));
     }
   }
 
@@ -75,7 +122,7 @@ class PrismaEventRepository implements IEventRepository {
       const rows = await this.prisma.event.findMany({ where: { organizerId } });
       return Ok(rows.map(toIEvent));
     } catch {
-      return Err(UnexpectedError("Failed to load organizer events."));
+      return Err(UnexpectedEventError("Failed to load organizer events."));
     }
   }
 
@@ -84,7 +131,7 @@ class PrismaEventRepository implements IEventRepository {
       const rows = await this.prisma.event.findMany();
       return Ok(rows.map(toIEvent));
     } catch {
-      return Err(UnexpectedError("Failed to list events."));
+      return Err(UnexpectedEventError("Failed to list events."));
     }
   }
 
@@ -95,7 +142,7 @@ class PrismaEventRepository implements IEventRepository {
       });
       return Ok(rows.map(toIEvent));
     } catch {
-      return Err(UnexpectedError("Failed to list archived events."));
+      return Err(UnexpectedEventError("Failed to list archived events."));
     }
   }
 
@@ -106,7 +153,7 @@ class PrismaEventRepository implements IEventRepository {
       await this.prisma.event.delete({ where: { id } });
       return Ok(undefined);
     } catch {
-      return Err(UnexpectedError("Failed to delete event."));
+      return Err(UnexpectedEventError("Failed to delete event."));
     }
   }
 
@@ -131,7 +178,7 @@ class PrismaEventRepository implements IEventRepository {
       });
       return Ok(undefined);
     } catch {
-      return Err(UnexpectedError("Failed to update event."));
+      return Err(UnexpectedEventError("Failed to update event."));
     }
   }
 
@@ -145,7 +192,7 @@ class PrismaEventRepository implements IEventRepository {
       await this.prisma.event.update({ where: { id }, data: { status } });
       return Ok(undefined);
     } catch {
-      return Err(UnexpectedError("Failed to update event status."));
+      return Err(UnexpectedEventError("Failed to update event status."));
     }
   }
 
@@ -201,13 +248,178 @@ class PrismaEventRepository implements IEventRepository {
       });
       return Ok(rows.map(toIEvent));
     } catch {
-      return Err(UnexpectedError("Failed to filter events."));
+      return Err(UnexpectedEventError("Failed to filter events."));
+    }
+  }
+
+  async createRSVP(data: CreateRSVPInput): Promise<Result<IRSVP, RSVPError>> {
+    try {
+      const row = await this.prisma.rSVP.create({
+        data: {
+          eventId: data.eventId,
+          userId: data.userId,
+          status: data.status ?? "going",
+          createdAt: data.createdAt,
+        },
+      });
+      return Ok(toIRSVP(row));
+    } catch {
+      return Err(InvalidRSVPData("Failed to create RSVP."));
+    }
+  }
+
+  async getRSVPById(id: number): Promise<Result<IRSVP, RSVPError>> {
+    try {
+      const row = await this.prisma.rSVP.findUnique({ where: { id } });
+      if (!row) return Err(RSVPNotFound(`RSVP ${id} was not found.`));
+      return Ok(toIRSVP(row));
+    } catch {
+      return Err(RSVPUnexpectedDependencyError("Failed to load RSVP."));
+    }
+  }
+
+  async getRSVPByEventAndUser(
+    eventId: number,
+    userId: string,
+  ): Promise<Result<IRSVP, RSVPError>> {
+    try {
+      const row = await this.prisma.rSVP.findUnique({
+        where: { eventId_userId: { eventId, userId } },
+      });
+      if (!row) {
+        return Err(
+          RSVPNotFound(`RSVP for event ${eventId} and user ${userId} was not found.`),
+        );
+      }
+      return Ok(toIRSVP(row));
+    } catch {
+      return Err(RSVPUnexpectedDependencyError("Failed to load RSVP."));
+    }
+  }
+
+  async listAllRSVPs(): Promise<Result<IRSVP[], RSVPError>> {
+    try {
+      const rows = await this.prisma.rSVP.findMany({
+        orderBy: { createdAt: "asc" },
+      });
+      return Ok(rows.map(toIRSVP));
+    } catch {
+      return Err(RSVPUnexpectedDependencyError("Failed to list RSVPs."));
+    }
+  }
+
+  async listRSVPsByEvent(
+    eventId: number,
+    filterStatus: RSVPFilterStatus = "all",
+  ): Promise<Result<IRSVP[], RSVPError>> {
+    try {
+      const rows = await this.prisma.rSVP.findMany({
+        where:
+          filterStatus === "all"
+            ? { eventId }
+            : { eventId, status: filterStatus },
+        orderBy: { createdAt: "asc" },
+      });
+      return Ok(rows.map(toIRSVP));
+    } catch {
+      return Err(RSVPUnexpectedDependencyError("Failed to list event RSVPs."));
+    }
+  }
+
+  async listRSVPsByUser(
+    userId: string,
+    filterStatus: RSVPFilterStatus = "all",
+  ): Promise<Result<IRSVP[], RSVPError>> {
+    try {
+      const rows = await this.prisma.rSVP.findMany({
+        where:
+          filterStatus === "all"
+            ? { userId }
+            : { userId, status: filterStatus },
+        orderBy: { createdAt: "asc" },
+      });
+      return Ok(rows.map(toIRSVP));
+    } catch {
+      return Err(RSVPUnexpectedDependencyError("Failed to list user RSVPs."));
+    }
+  }
+
+  async updateRSVPStatus(
+    id: number,
+    status: RSVPStatus,
+  ): Promise<Result<IRSVP, RSVPError>> {
+    try {
+      const existing = await this.prisma.rSVP.findUnique({ where: { id } });
+      if (!existing) return Err(RSVPNotFound(`RSVP ${id} was not found.`));
+      const row = await this.prisma.rSVP.update({
+        where: { id },
+        data: { status },
+      });
+      return Ok(toIRSVP(row));
+    } catch {
+      return Err(RSVPUnexpectedDependencyError("Failed to update RSVP."));
+    }
+  }
+
+  async createComment(
+    data: CreateCommentInput,
+  ): Promise<Result<IComment, CommentError>> {
+    try {
+      const row = await this.prisma.comment.create({
+        data: {
+          eventId: data.eventId,
+          userId: data.userId,
+          content: data.content,
+        },
+      });
+      return Ok(toIComment(row));
+    } catch {
+      return Err(UnexpectedCommentError("Failed to create comment."));
+    }
+  }
+
+  async getCommentById(id: number): Promise<Result<IComment, CommentError>> {
+    try {
+      const row = await this.prisma.comment.findUnique({ where: { id } });
+      if (!row) return Err(CommentNotFound(`Comment ${id} was not found.`));
+      return Ok(toIComment(row));
+    } catch {
+      return Err(UnexpectedCommentError("Failed to load comment."));
+    }
+  }
+
+  async listCommentsByEvent(
+    eventId: number,
+  ): Promise<Result<IComment[], CommentError>> {
+    try {
+      const rows = await this.prisma.comment.findMany({
+        where: { eventId },
+        orderBy: { createdAt: "asc" },
+      });
+      return Ok(rows.map(toIComment));
+    } catch {
+      return Err(UnexpectedCommentError("Failed to list event comments."));
+    }
+  }
+
+  async deleteComment(id: number): Promise<Result<IComment, CommentError>> {
+    try {
+      const existing = await this.prisma.comment.findUnique({ where: { id } });
+      if (!existing) return Err(CommentNotFound(`Comment ${id} was not found.`));
+      await this.prisma.comment.delete({ where: { id } });
+      return Ok(toIComment(existing));
+    } catch {
+      return Err(UnexpectedCommentError("Failed to delete comment."));
     }
   }
 }
 
+export type PrismaEventRepositoryBundle = IEventRepository &
+  IRSVPRepository &
+  ICommentRepository;
+
 export function CreatePrismaEventRepository(
   prisma: PrismaClient,
-): IEventRepository {
+): PrismaEventRepositoryBundle {
   return new PrismaEventRepository(prisma);
 }

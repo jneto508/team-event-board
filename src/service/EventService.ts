@@ -224,6 +224,21 @@ export class EventService implements IEventService {
         if (!archiveResult.ok) {
           return Err(archiveResult.value as EventError);
         }
+
+        const result = await this.repository.getAllEvents();
+        if (!result.ok) {
+            return Err(result.value as EventError);
+        }
+
+        const events = result.value;
+        const now = new Date();
+
+        if (query === null || query === undefined) {
+            return Err(InvalidSearchInput("Search query is required."));
+        }
+
+        const q = query.toLowerCase().trim();
+
       
         if (typeof query !== "string") {
           return Err(
@@ -238,6 +253,30 @@ export class EventService implements IEventService {
             InvalidSearchInput("Search query too long.")
           );
         }
+
+        if (/[^a-zA-Z0-9\s]/.test(q)) {
+            return Err(InvalidSearchInput("Invalid characters in search."));
+        }
+
+        const publishedUpcoming = events.filter((event) => {
+            return event.status === "published" && event.startDateTime > now;
+        });
+
+        if (q === "") {
+            return Ok(publishedUpcoming);
+        }
+
+        const filtered = publishedUpcoming.filter((event) => {
+            return (
+                event.title.toLowerCase().includes(q) ||
+                event.description.toLowerCase().includes(q) ||
+                event.location.toLowerCase().includes(q)
+            );
+        });
+
+        return Ok(filtered);
+    }
+
       
         if (/[^a-zA-Z0-9\s]/.test(q)) {
           return Err(
