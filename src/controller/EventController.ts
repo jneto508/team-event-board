@@ -478,9 +478,22 @@ class EventController implements IEventController {
     this.logger.info(`Showing edit form for event ${eventId}`);
 
     const result = await this.eventService.getEditableEvent(eventId, actingUserId, actingUserRole);
+
+    if (!result.ok && this.isEventError(result.value)) {
+      const error = result.value;
+      const status = error.name === "EventNotFound" ? 404 : 403;
+      res.status(status).render("partials/error", {
+        message: error.message,
+        layout: false,
+      });
+      return;
+    }
+
     if (!result.ok) {
-      const status = result.value.name === "EventNotFound" ? 404 : 403;
-      res.status(status).render("partials/error", { message: result.value.message, layout: false });
+      res.status(500).render("partials/error", {
+        message: "Unable to load event for editing.",
+        layout: false,
+      });
       return;
     }
 
