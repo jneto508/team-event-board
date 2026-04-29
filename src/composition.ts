@@ -12,6 +12,7 @@ import type { ILoggingService } from "./service/LoggingService";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "./generated/prisma/client";
 import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
+import { CreateInMemoryEventRepository } from "./repository/InMemoryEventRepository";
 import { CreateInMemorySavedEventRepository } from "./repository/InMemorySavedEventRepository";
 import { CreateEventService } from "./service/EventService";
 import { CreateRSVPService } from "./service/RSVPService";
@@ -20,13 +21,9 @@ import { CreateEventController } from "./controller/EventController";
 import { CreateEventCommentsService } from "./service/EventCommentsService";
 import { CreateEventCommentsController } from "./controller/EventCommentsController";
 import { CreateAttendeeListService } from "./service/AttendeeListService";
-import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
-import { PrismaClient } from "@prisma/client";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
     const resolvedLogger = logger ?? CreateLoggingService();
-
-    const prisma = new PrismaClient();
 
     // Authentication & authorization wiring
     const authUsers = CreateInMemoryUserRepository();
@@ -41,29 +38,28 @@ export function createComposedApp(logger?: ILoggingService): IApp {
 
     // Repository wiring
     const adapter = new PrismaBetterSqlite3({
-        url: process.env.DATABASE_URL ?? "file:./dev.db",
+        url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
     });
     const prisma = new PrismaClient({ adapter });
     const eventRepository = CreatePrismaEventRepository(prisma);
-    const legacyRepository = CreateInMemoryEventRepository();
     const savedEventRepository = CreateInMemorySavedEventRepository();
-   
+    const legacyRepository = CreateInMemoryEventRepository();
 
     // Event wiring
     const eventService = CreateEventService(eventRepository);
-    const rsvpService = CreateRSVPService(legacyRepository, legacyRepository);
+    const rsvpService = CreateRSVPService(eventRepository, eventRepository);
     const savedEventService = new SavedEventService(savedEventRepository, eventRepository);
     const eventCommentsService = CreateEventCommentsService(
         eventRepository,
-        legacyRepository,
-        legacyRepository,
+        eventRepository,
+        eventRepository,
         authUsers,
     );
 
     // RSVP dashboard wiring
     const memberRsvpsDashboardService = CreateMemberRsvpsDashboardService(
         eventRepository,
-        legacyRepository,
+        eventRepository,
     );
     const memberRsvpsDashboardController = CreateMemberRsvpsDashboardController(
         memberRsvpsDashboardService,
@@ -73,7 +69,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
 
     const attendeeListService = CreateAttendeeListService(
         eventRepository,
-        legacyRepository,
+        eventRepository,
         authUsers,
     );
     const eventController = CreateEventController(

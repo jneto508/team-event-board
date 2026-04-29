@@ -201,41 +201,36 @@ class PrismaEventRepository
   ): Promise<Result<IEvent[], EventError>> {
     try {
       const now = new Date();
-  
       const rows = await this.prisma.event.findMany({
         where: {
           status: "published",
           startDateTime: {
             gt: now,
           },
-          OR: [
-            {
-              title: {
-                contains: query,
-              },
-            },
-            {
-              description: {
-                contains: query,
-              },
-            },
-            {
-              location: {
-                contains: query,
-              },
-            },
-          ],
         },
         orderBy: {
           startDateTime: "asc",
         },
       });
-  
-      return Ok(rows.map(toIEvent));
-    } catch {
-      return Err(
-        UnexpectedError("Failed to search events."),
+
+      const normalizedQuery = query.toLowerCase().trim();
+      const events = rows.map(toIEvent);
+
+      if (normalizedQuery === "") {
+        return Ok(events);
+      }
+
+      return Ok(
+        events.filter((event) => {
+          return (
+            event.title.toLowerCase().includes(normalizedQuery) ||
+            event.description.toLowerCase().includes(normalizedQuery) ||
+            event.location.toLowerCase().includes(normalizedQuery)
+          );
+        }),
       );
+    } catch {
+      return Err(UnexpectedEventError("Failed to search events."));
     }
   }
 
