@@ -9,11 +9,9 @@ import { CreateMemberRsvpsDashboardController } from "./rsvps/MemberRsvpsDashboa
 import { CreateMemberRsvpsDashboardService } from "./service/MemberRsvpsDashboardService";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "./generated/prisma/client";
 import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
-import { CreateInMemoryEventRepository } from "./repository/InMemoryEventRepository";
-import { CreateInMemorySavedEventRepository } from "./repository/InMemorySavedEventRepository";
 import { CreateEventService } from "./service/EventService";
 import { CreateRSVPService } from "./service/RSVPService";
 import { SavedEventService } from "./service/SavedEventService";
@@ -21,6 +19,7 @@ import { CreateEventController } from "./controller/EventController";
 import { CreateEventCommentsService } from "./service/EventCommentsService";
 import { CreateEventCommentsController } from "./controller/EventCommentsController";
 import { CreateAttendeeListService } from "./service/AttendeeListService";
+import { CreatePrismaSavedEventRepository } from "./repository/PrismaSavedEventRepository";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
@@ -37,13 +36,12 @@ export function createComposedApp(logger?: ILoggingService): IApp {
   );
 
   // Repository wiring
-  const adapter = new PrismaBetterSqlite3({
+  const adapter = new PrismaBetterSQLite3({
     url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
   });
   const prisma = new PrismaClient({ adapter });
   const eventRepository = CreatePrismaEventRepository(prisma);
-  const savedEventRepository = CreateInMemorySavedEventRepository();
-  const legacyRepository = CreateInMemoryEventRepository();
+  const savedEventRepository = CreatePrismaSavedEventRepository(prisma);
 
   // Event wiring
   const eventService = CreateEventService(eventRepository);
