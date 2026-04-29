@@ -220,8 +220,9 @@ export class EventService implements IEventService {
 
     async searchEvents(query: string): Promise<Result<IEvent[], EventError>> {
         const archiveResult = await this.archiveExpiredEvents();
+      
         if (!archiveResult.ok) {
-            return Err(archiveResult.value as EventError);
+          return Err(archiveResult.value as EventError);
         }
 
         const result = await this.repository.getAllEvents();
@@ -238,8 +239,19 @@ export class EventService implements IEventService {
 
         const q = query.toLowerCase().trim();
 
+      
+        if (typeof query !== "string") {
+          return Err(
+            InvalidSearchInput("Search query must be a string.")
+          );
+        }
+      
+        const q = query.trim();
+      
         if (q.length > 100) {
-            return Err(InvalidSearchInput("Search query too long."));
+          return Err(
+            InvalidSearchInput("Search query too long.")
+          );
         }
 
         if (/[^a-zA-Z0-9\s]/.test(q)) {
@@ -265,6 +277,15 @@ export class EventService implements IEventService {
         return Ok(filtered);
     }
 
+      
+        if (/[^a-zA-Z0-9\s]/.test(q)) {
+          return Err(
+            InvalidSearchInput("Invalid characters in search.")
+          );
+        }
+      
+        return this.repository.searchPublishedEvents(q);
+      }
     async getArchivedEvents(
         category?: string,
     ): Promise<Result<IEvent[], EventError>> {

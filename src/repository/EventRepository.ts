@@ -51,6 +51,9 @@ export interface IEventRepository {
     listEvents(
         filterStatus?: EventFilterStatus,
     ): Promise<Result<IEvent[], EventError>>;
+    searchPublishedEvents(
+        query: string
+      ): Promise<Result<IEvent[], EventError>>;
 }
 
 export interface IRSVPRepository {
