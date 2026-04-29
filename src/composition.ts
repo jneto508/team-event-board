@@ -9,7 +9,9 @@ import { CreateMemberRsvpsDashboardController } from "./rsvps/MemberRsvpsDashboa
 import { CreateMemberRsvpsDashboardService } from "./service/MemberRsvpsDashboardService";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
-import { CreateInMemoryEventRepository } from "./repository/InMemoryEventRepository";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaClient } from "./generated/prisma/client";
+import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
 import { CreateInMemorySavedEventRepository } from "./repository/InMemorySavedEventRepository";
 import { CreateEventService } from "./service/EventService";
 import { CreateRSVPService } from "./service/RSVPService";
@@ -34,7 +36,11 @@ export function createComposedApp(logger?: ILoggingService): IApp {
     );
 
     // Repository wiring
-    const eventRepository = CreateInMemoryEventRepository();
+    const adapter = new PrismaBetterSqlite3({
+        url: process.env.DATABASE_URL ?? "file:./dev.db",
+    });
+    const prisma = new PrismaClient({ adapter });
+    const eventRepository = CreatePrismaEventRepository(prisma);
     const savedEventRepository = CreateInMemorySavedEventRepository();
 
     // Event wiring
