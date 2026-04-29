@@ -19,9 +19,12 @@ import { CreateEventCommentsService } from "./service/EventCommentsService";
 import { CreateEventCommentsController } from "./controller/EventCommentsController";
 import { CreateAttendeeListService } from "./service/AttendeeListService";
 import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
+import { PrismaClient } from "@prisma/client";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
     const resolvedLogger = logger ?? CreateLoggingService();
+
+    const prisma = new PrismaClient();
 
     // Authentication & authorization wiring
     const authUsers = CreateInMemoryUserRepository();
@@ -35,7 +38,7 @@ export function createComposedApp(logger?: ILoggingService): IApp {
     );
 
     // Repository wiring
-    const eventRepository = CreatePrismaEventRepository();
+    const eventRepository = CreatePrismaEventRepository(prisma);
     const legacyRepository = CreateInMemoryEventRepository();
     const savedEventRepository = CreateInMemorySavedEventRepository();
    
