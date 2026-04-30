@@ -148,3 +148,4 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 dev.db
+prisma/dev.db
