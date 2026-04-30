@@ -204,6 +204,10 @@ export class EventService implements IEventService {
         const events = result.value;
         const now = new Date();
     
+        if (typeof query !== "string") {
+            return Err(InvalidSearchInput("Search query must be a string."));
+        }
+
         const q = query.toLowerCase().trim();
     
         if (q.length > 100) {
