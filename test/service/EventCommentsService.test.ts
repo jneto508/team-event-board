@@ -3,6 +3,24 @@ import { CreateInMemoryEventRepository } from "../../src/repository/InMemoryEven
 import { CreateEventCommentsService } from "../../src/service/EventCommentsService";
 
 describe("EventCommentsService", () => {
+  it("keeps RSVP toggle available for members leaving an existing waitlisted RSVP", async () => {
+    const repository = CreateInMemoryEventRepository();
+    const service = CreateEventCommentsService(
+      repository,
+      repository,
+      repository,
+      CreateInMemoryUserRepository(),
+    );
+
+    const result = await service.getEventViewModel(2, "user-reader");
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.viewerRsvpStatus).toBe("waitlisted");
+      expect(result.value.canToggleRsvp).toBe(true);
+    }
+  });
+
   it("creates a comment on a published event", async () => {
     const repository = CreateInMemoryEventRepository();
     const service = CreateEventCommentsService(
