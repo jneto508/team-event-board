@@ -88,30 +88,7 @@ export class EventService implements IEventService {
     async archiveExpiredEvents(
         now: Date = new Date(),
     ): Promise<Result<number, EventError>> {
-        const eventsResult = await this.repository.getAllEvents();
-        if (eventsResult.ok === false) {
-            return Err(eventsResult.value);
-        }
-
-        let archivedCount = 0;
-        for (const event of eventsResult.value) {
-            if (event.status === "past" || event.status === "cancelled") {
-                continue;
-            }
-
-            if (event.endDateTime <= now) {
-                const updated = await this.repository.updateEventStatus(
-                    event.id,
-                    "past",
-                );
-                if (updated.ok === false) {
-                    return Err(updated.value);
-                }
-                archivedCount += 1;
-            }
-        }
-
-        return Ok(archivedCount);
+        return this.repository.archiveExpiredEvents(now);
     }
 
     async createEvent(
@@ -252,27 +229,7 @@ export class EventService implements IEventService {
             return Err(archiveResult.value);
         }
 
-        const result = await this.repository.getAllArchived();
-        if (result.ok === false) {
-            return Err(result.value);
-        }
-
-        const normalizedCategory = String(category ?? "")
-            .trim()
-            .toLowerCase();
-
-        const filtered = normalizedCategory
-            ? result.value.filter(
-                  (event) => event.category === normalizedCategory,
-              )
-            : result.value;
-
-        const sorted = [...filtered].sort(
-            (left, right) =>
-                right.endDateTime.getTime() - left.endDateTime.getTime(),
-        );
-
-        return Ok(sorted);
+        return this.repository.getArchivedEvents(category);
     }
 }
 
