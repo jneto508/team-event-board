@@ -1,5 +1,9 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
+import {
+  disconnectPrismaTestDb,
+  resetPrismaEventData,
+} from "../prismaTestUtils";
 
 async function loginAs(
   agent: ReturnType<typeof request.agent>,
@@ -13,8 +17,18 @@ async function loginAs(
 }
 
 describe("Feature 2 - Event Detail Route", () => {
+  const mode = "prisma";
+
+  beforeEach(async () => {
+    await resetPrismaEventData();
+  });
+
+  afterAll(async () => {
+    await disconnectPrismaTestDb();
+  });
+
   it("shows a published event to an authenticated member", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await loginAs(agent, "user@app.test");
@@ -27,7 +41,7 @@ describe("Feature 2 - Event Detail Route", () => {
   });
 
   it("returns 404 for a missing event", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await loginAs(agent, "user@app.test");
@@ -39,7 +53,7 @@ describe("Feature 2 - Event Detail Route", () => {
   });
 
   it("allows the organizer to view their own draft event", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await loginAs(agent, "staff@app.test");
@@ -52,7 +66,7 @@ describe("Feature 2 - Event Detail Route", () => {
   });
 
   it("allows an admin to view another user's draft event", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await loginAs(agent, "admin@app.test");
@@ -65,7 +79,7 @@ describe("Feature 2 - Event Detail Route", () => {
   });
 
   it("hides a draft event from an unauthorized member", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await loginAs(agent, "user@app.test");

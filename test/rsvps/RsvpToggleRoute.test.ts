@@ -1,8 +1,21 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
+import {
+  disconnectPrismaTestDb,
+  resetPrismaEventData,
+} from "../prismaTestUtils";
 
 describe("POST /events/:id/rsvp-toggle", () => {
+  const mode = "prisma";
   type TestAgent = ReturnType<typeof request.agent>;
+
+  beforeEach(async () => {
+    await resetPrismaEventData();
+  });
+
+  afterAll(async () => {
+    await disconnectPrismaTestDb();
+  });
 
   async function login(
     agent: TestAgent,
@@ -15,7 +28,7 @@ describe("POST /events/:id/rsvp-toggle", () => {
   }
 
   it("updates the RSVP button inline for event detail HTMX requests", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await login(agent, "user@app.test");

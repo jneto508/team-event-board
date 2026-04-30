@@ -1,5 +1,9 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
+import {
+  disconnectPrismaTestDb,
+  resetPrismaEventData,
+} from "../prismaTestUtils";
 
 const VALID_EVENT = {
   title: "Test Workshop",
@@ -19,9 +23,18 @@ async function loginAs(agent: request.Agent, email: string) {
 }
 
 describe("Event creation routes", () => {
+  const mode = "prisma";
+
+  beforeEach(async () => {
+    await resetPrismaEventData();
+  });
+
+  afterAll(async () => {
+    await disconnectPrismaTestDb();
+  });
   describe("POST /events — happy path", () => {
     it("creates an event and redirects to /home on valid input from a staff user", async () => {
-      const app = createComposedApp().getExpressApp();
+      const app = createComposedApp(mode).getExpressApp();
       const agent = request.agent(app);
       await loginAs(agent, "staff@app.test");
 
@@ -35,7 +48,7 @@ describe("Event creation routes", () => {
     });
 
     it("creates an event and redirects to /home on valid input from an admin user", async () => {
-      const app = createComposedApp().getExpressApp();
+      const app = createComposedApp(mode).getExpressApp();
       const agent = request.agent(app);
       await loginAs(agent, "admin@app.test");
 
@@ -49,7 +62,7 @@ describe("Event creation routes", () => {
     });
 
     it("accepts an event without a capacity (optional field)", async () => {
-      const app = createComposedApp().getExpressApp();
+      const app = createComposedApp(mode).getExpressApp();
       const agent = request.agent(app);
       await loginAs(agent, "staff@app.test");
 
@@ -66,7 +79,7 @@ describe("Event creation routes", () => {
 
   describe("POST /events — authentication errors", () => {
     it("rejects unauthenticated POST requests", async () => {
-      const app = createComposedApp().getExpressApp();
+      const app = createComposedApp(mode).getExpressApp();
 
       const response = await request(app)
         .post("/events")
@@ -78,7 +91,7 @@ describe("Event creation routes", () => {
     });
 
     it("rejects member-role users attempting to create events", async () => {
-      const app = createComposedApp().getExpressApp();
+      const app = createComposedApp(mode).getExpressApp();
       const agent = request.agent(app);
       await loginAs(agent, "user@app.test");
 
@@ -93,7 +106,7 @@ describe("Event creation routes", () => {
 
   describe("POST /events — InvalidEventData errors", () => {
     it("returns 400 when title is missing", async () => {
-      const app = createComposedApp().getExpressApp();
+      const app = createComposedApp(mode).getExpressApp();
       const agent = request.agent(app);
       await loginAs(agent, "staff@app.test");
 
@@ -107,7 +120,7 @@ describe("Event creation routes", () => {
     });
 
     it("returns 400 when description is missing", async () => {
-      const app = createComposedApp().getExpressApp();
+      const app = createComposedApp(mode).getExpressApp();
       const agent = request.agent(app);
       await loginAs(agent, "staff@app.test");
 
@@ -121,7 +134,7 @@ describe("Event creation routes", () => {
     });
 
     it("returns 400 when location is missing", async () => {
-      const app = createComposedApp().getExpressApp();
+      const app = createComposedApp(mode).getExpressApp();
       const agent = request.agent(app);
       await loginAs(agent, "staff@app.test");
 
@@ -137,7 +150,7 @@ describe("Event creation routes", () => {
 
   describe("POST /events — ValidationError errors", () => {
     it("returns 400 when end date is before start date", async () => {
-      const app = createComposedApp().getExpressApp();
+      const app = createComposedApp(mode).getExpressApp();
       const agent = request.agent(app);
       await loginAs(agent, "staff@app.test");
 
@@ -157,7 +170,7 @@ describe("Event creation routes", () => {
     });
 
     it("returns 400 when end date equals start date", async () => {
-      const app = createComposedApp().getExpressApp();
+      const app = createComposedApp(mode).getExpressApp();
       const agent = request.agent(app);
       await loginAs(agent, "staff@app.test");
 
@@ -177,7 +190,7 @@ describe("Event creation routes", () => {
     });
 
     it("returns 400 when capacity is a negative number", async () => {
-      const app = createComposedApp().getExpressApp();
+      const app = createComposedApp(mode).getExpressApp();
       const agent = request.agent(app);
       await loginAs(agent, "staff@app.test");
 
@@ -193,7 +206,7 @@ describe("Event creation routes", () => {
     });
 
     it("returns 400 when startDateTime is not a valid date string", async () => {
-      const app = createComposedApp().getExpressApp();
+      const app = createComposedApp(mode).getExpressApp();
       const agent = request.agent(app);
       await loginAs(agent, "staff@app.test");
 
