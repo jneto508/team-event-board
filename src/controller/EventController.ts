@@ -395,8 +395,8 @@ class EventController implements IEventController {
       return;
     }
 
-    res.render("events/attendees", {
-      session,
+    res.render("events/attendee_list", {
+      layout: false,
       attendeeList: result.value,
       eventId,
       pageError: null,
