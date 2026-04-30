@@ -253,11 +253,40 @@ class InMemoryEventRepository
     }
   }
 
-  async getAllArchived(): Promise<Result<IEvent[], EventError>> {
+  async getArchivedEvents(category?: string): Promise<Result<IEvent[], EventError>> {
     try {
-      return Ok(this.events.filter((event) => event.status === "past" || event.status === "cancelled"));
+      const normalizedCategory = String(category ?? "").trim().toLowerCase();
+      const archivedEvents = this.events
+        .filter((event) => event.status === "past" || event.status === "cancelled")
+        .filter((event) =>
+          normalizedCategory === "" ? true : event.category === normalizedCategory,
+        )
+        .sort((left, right) => right.endDateTime.getTime() - left.endDateTime.getTime());
+
+      return Ok(archivedEvents);
     } catch {
       return Err(UnexpectedEventDependencyError("Failed to list archived events."));
+    }
+  }
+
+  async archiveExpiredEvents(now: Date): Promise<Result<number, EventError>> {
+    try {
+      let archivedCount = 0;
+
+      for (const event of this.events) {
+        if (
+          event.status !== "past" &&
+          event.status !== "cancelled" &&
+          event.endDateTime <= now
+        ) {
+          updateEvent(event, { status: "past" });
+          archivedCount += 1;
+        }
+      }
+
+      return Ok(archivedCount);
+    } catch {
+      return Err(UnexpectedEventDependencyError("Failed to archive expired events."));
     }
   }
 
@@ -375,6 +404,23 @@ class InMemoryEventRepository
       );
     } catch {
       return Err(UnexpectedRsvpDependencyError("Unable to list user RSVPs."));
+    }
+  }
+
+  async getEventAttendanceCounts(
+    eventId: number,
+  ): Promise<Result<{ attendeeCount: number; waitlistCount: number }, RSVPError>> {
+    try {
+      const attendeeCount = this.rsvps.filter(
+        (rsvp) => rsvp.eventId === eventId && rsvp.status === "going",
+      ).length;
+      const waitlistCount = this.rsvps.filter(
+        (rsvp) => rsvp.eventId === eventId && rsvp.status === "waitlisted",
+      ).length;
+
+      return Ok({ attendeeCount, waitlistCount });
+    } catch {
+      return Err(UnexpectedRsvpDependencyError("Unable to count event RSVPs."));
     }
   }
 
