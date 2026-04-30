@@ -9,8 +9,6 @@ import { CreateMemberRsvpsDashboardController } from "./rsvps/MemberRsvpsDashboa
 import { CreateMemberRsvpsDashboardService } from "./service/MemberRsvpsDashboardService";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient } from "@prisma/client";
 import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "./generated/prisma/client";
 import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
