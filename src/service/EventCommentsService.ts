@@ -137,7 +137,9 @@ class EventCommentsService implements IEventCommentsService {
       viewerUserId,
     );
     if (viewerRsvpResult.ok) {
-      return viewerRsvpResult.value.status !== "cancelled";
+      if (viewerRsvpResult.value.status !== "cancelled") {
+        return true;
+      }
     }
 
     const viewerResult = await this.users.findById(viewerUserId);
