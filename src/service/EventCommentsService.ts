@@ -132,6 +132,16 @@ class EventCommentsService implements IEventCommentsService {
   ): Promise<boolean> {
     if (!viewerUserId) return false;
 
+    const viewerRsvpResult = await this.rsvps.getRSVPByEventAndUser(
+      event.id,
+      viewerUserId,
+    );
+    if (viewerRsvpResult.ok) {
+      if (viewerRsvpResult.value.status !== "cancelled") {
+        return true;
+      }
+    }
+
     const viewerResult = await this.users.findById(viewerUserId);
     if (viewerResult.ok === false || !viewerResult.value) return false;
 

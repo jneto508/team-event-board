@@ -422,6 +422,9 @@ class InMemoryEventRepository
       return Ok({ attendeeCount, waitlistCount });
     } catch {
       return Err(UnexpectedRsvpDependencyError("Unable to count event RSVPs."));
+    }
+  }
+
   async listRSVPsWithEventsByUser(
     userId: string,
     filterStatus: RSVPFilterStatus = "all",
