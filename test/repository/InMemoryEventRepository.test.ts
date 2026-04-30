@@ -49,4 +49,25 @@ describe("InMemoryEventRepository", () => {
       expect(removed.value.content).toBe("Looking forward to this.");
     }
   });
+
+  it("lists joined user RSVPs with their events from memory", async () => {
+    const repository = CreateInMemoryEventRepository();
+
+    const result = await repository.listRSVPsWithEventsByUser("user-reader");
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(
+        result.value.map(({ rsvp, event }) => ({
+          rsvpId: rsvp.id,
+          title: event.title,
+        })),
+      ).toEqual([
+        { rsvpId: 3, title: "JavaScript Lightning Talks" },
+        { rsvpId: 4, title: "Community Picnic" },
+        { rsvpId: 1, title: "Spring Hack Night" },
+        { rsvpId: 2, title: "Design Critique Circle" },
+      ]);
+    }
+  });
 });

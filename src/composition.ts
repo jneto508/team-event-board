@@ -11,9 +11,9 @@ import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
+import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaClient } from "./generated/prisma/client";
 import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
-import { CreateInMemoryEventRepository } from "./repository/InMemoryEventRepository";
-import { CreateInMemorySavedEventRepository } from "./repository/InMemorySavedEventRepository";
 import { CreateEventService } from "./service/EventService";
 import { CreateRSVPService } from "./service/RSVPService";
 import { SavedEventService } from "./service/SavedEventService";
@@ -21,78 +21,81 @@ import { CreateEventController } from "./controller/EventController";
 import { CreateEventCommentsService } from "./service/EventCommentsService";
 import { CreateEventCommentsController } from "./controller/EventCommentsController";
 import { CreateAttendeeListService } from "./service/AttendeeListService";
+import { CreatePrismaSavedEventRepository } from "./repository/PrismaSavedEventRepository";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
-    const resolvedLogger = logger ?? CreateLoggingService();
+  const resolvedLogger = logger ?? CreateLoggingService();
 
-    // Authentication & authorization wiring
-    const authUsers = CreateInMemoryUserRepository();
-    const passwordHasher = CreatePasswordHasher();
-    const authService = CreateAuthService(authUsers, passwordHasher);
-    const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
-    const authController = CreateAuthController(
-        authService,
-        adminUserService,
-        resolvedLogger,
-    );
+  // Authentication & authorization wiring
+  const authUsers = CreateInMemoryUserRepository();
+  const passwordHasher = CreatePasswordHasher();
+  const authService = CreateAuthService(authUsers, passwordHasher);
+  const adminUserService = CreateAdminUserService(authUsers, passwordHasher);
+  const authController = CreateAuthController(
+    authService,
+    adminUserService,
+    resolvedLogger,
+  );
 
-    // Repository wiring
-    const adapter = new PrismaBetterSqlite3({
-        url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
-    });
-    const prisma = new PrismaClient({ adapter });
-    const eventRepository = CreatePrismaEventRepository(prisma);
-    const savedEventRepository = CreateInMemorySavedEventRepository();
-    const legacyRepository = CreateInMemoryEventRepository();
+  // Repository wiring
+  const adapter = new PrismaBetterSQLite3({
+    url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
+  });
+  const prisma = new PrismaClient({ adapter });
+  const eventRepository = CreatePrismaEventRepository(prisma);
+  const savedEventRepository = CreatePrismaSavedEventRepository(prisma);
 
-    // Event wiring
-    const eventService = CreateEventService(eventRepository);
-    const rsvpService = CreateRSVPService(eventRepository, eventRepository);
-    const savedEventService = new SavedEventService(savedEventRepository, eventRepository);
-    const eventCommentsService = CreateEventCommentsService(
-        eventRepository,
-        eventRepository,
-        eventRepository,
-        authUsers,
-    );
+  // Event wiring
+  const eventService = CreateEventService(eventRepository);
+  const rsvpService = CreateRSVPService(eventRepository, eventRepository);
+  const savedEventService = new SavedEventService(
+    savedEventRepository,
+    eventRepository,
+  );
+  const eventCommentsService = CreateEventCommentsService(
+    eventRepository,
+    eventRepository,
+    eventRepository,
+    authUsers,
+  );
 
-    // RSVP dashboard wiring
-    const memberRsvpsDashboardService = CreateMemberRsvpsDashboardService(
-        eventRepository,
-        eventRepository,
-    );
-    const memberRsvpsDashboardController = CreateMemberRsvpsDashboardController(
-        memberRsvpsDashboardService,
-        rsvpService,
-        resolvedLogger,
-    );
+  // RSVP dashboard wiring
+  const memberRsvpsDashboardService = CreateMemberRsvpsDashboardService(
+    eventRepository,
+    eventRepository,
+  );
+  const memberRsvpsDashboardController = CreateMemberRsvpsDashboardController(
+    memberRsvpsDashboardService,
+    rsvpService,
+    resolvedLogger,
+  );
 
-    const attendeeListService = CreateAttendeeListService(
-        eventRepository,
-        eventRepository,
-        authUsers,
-    );
-    const eventController = CreateEventController(
-        eventService,
-        savedEventService,
-        rsvpService,
-        attendeeListService,
-        eventCommentsService,
-        resolvedLogger,
-    );
+  const attendeeListService = CreateAttendeeListService(
+    eventRepository,
+    eventRepository,
+    authUsers,
+  );
+  const eventController = CreateEventController(
+    eventService,
+    savedEventService,
+    rsvpService,
+    attendeeListService,
+    eventCommentsService,
+    resolvedLogger,
+  );
 
-    // Event comments wiring
-    const eventCommentsController = CreateEventCommentsController(
-        eventCommentsService,
-        savedEventService,
-        resolvedLogger,
-    );
+  // Event comments wiring
+  const eventCommentsController = CreateEventCommentsController(
+    eventCommentsService,
+    savedEventService,
+    resolvedLogger,
+  );
 
-    return CreateApp(
-        authController,
-        memberRsvpsDashboardController,
-        resolvedLogger,
-        eventController,
-        eventCommentsController,
-    );
+  return CreateApp(
+    authController,
+    memberRsvpsDashboardController,
+    resolvedLogger,
+    eventController,
+    eventCommentsController,
+  );
 }

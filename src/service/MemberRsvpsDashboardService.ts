@@ -1,5 +1,9 @@
 import { Err, Ok, type Result } from "../lib/result";
-import type { IEventRepository, IRSVPRepository } from "../repository/EventRepository";
+import type {
+  IEventRepository,
+  IRSVPRepository,
+  RSVPWithEvent,
+} from "../repository/EventRepository";
 
 export type DashboardRsvpEntry = {
   rsvpId: number;
@@ -100,6 +104,24 @@ class InMemoryMemberRsvpsDashboardService implements IMemberRsvpsDashboardServic
     });
   }
 
+  private toDashboardEntry(entry: RSVPWithEvent): DashboardRsvpEntry {
+    return {
+      rsvpId: entry.rsvp.id,
+      rsvpStatus: entry.rsvp.status,
+      rsvpedAt: entry.rsvp.createdAt,
+      event: {
+        id: entry.event.id,
+        title: entry.event.title,
+        description: entry.event.description,
+        location: entry.event.location,
+        category: entry.event.category,
+        status: entry.event.status,
+        startDateTime: entry.event.startDateTime,
+        endDateTime: entry.event.endDateTime,
+      },
+    };
+  }
+
   private async buildDashboardEntry(
     rsvpId: number,
     userId: string,
@@ -144,34 +166,12 @@ class InMemoryMemberRsvpsDashboardService implements IMemberRsvpsDashboardServic
       return Err(ValidationError("User id is required."));
     }
 
-    const rsvpResult = await this.rsvps.listRSVPsByUser(normalizedUserId);
-    if (rsvpResult.ok === false) {
-      return Err(UnexpectedDependencyError(rsvpResult.value.message));
+    const joinedResult = await this.rsvps.listRSVPsWithEventsByUser(normalizedUserId);
+    if (joinedResult.ok === false) {
+      return Err(UnexpectedDependencyError(joinedResult.value.message));
     }
 
-    const entries: DashboardRsvpEntry[] = [];
-    for (const rsvp of rsvpResult.value) {
-      const eventResult = await this.events.getEventById(rsvp.eventId);
-      if (eventResult.ok === false) {
-        return Err(UnexpectedDependencyError(eventResult.value.message));
-      }
-
-      entries.push({
-        rsvpId: rsvp.id,
-        rsvpStatus: rsvp.status,
-        rsvpedAt: rsvp.createdAt,
-        event: {
-          id: eventResult.value.id,
-          title: eventResult.value.title,
-          description: eventResult.value.description,
-          location: eventResult.value.location,
-          category: eventResult.value.category,
-          status: eventResult.value.status,
-          startDateTime: eventResult.value.startDateTime,
-          endDateTime: eventResult.value.endDateTime,
-        },
-      });
-    }
+    const entries = joinedResult.value.map((entry) => this.toDashboardEntry(entry));
 
     const upcoming = this.sortUpcoming(entries.filter((entry) => !this.isHistoryEntry(entry)));
     const history = this.sortHistory(entries.filter((entry) => this.isHistoryEntry(entry)));

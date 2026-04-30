@@ -3,7 +3,7 @@
  * Client
 **/
 
-import * as runtime from './runtime/client.js';
+import * as runtime from './runtime/library.js';
 import $Types = runtime.Types // general types
 import $Public = runtime.Types.Public
 import $Utils = runtime.Types.Utils
@@ -35,52 +35,18 @@ export type Comment = $Result.DefaultSelection<Prisma.$CommentPayload>
 export type SavedEvent = $Result.DefaultSelection<Prisma.$SavedEventPayload>
 
 /**
- * Enums
- */
-export namespace $Enums {
-  export const EventStatus: {
-  draft: 'draft',
-  published: 'published',
-  cancelled: 'cancelled',
-  past: 'past'
-};
-
-export type EventStatus = (typeof EventStatus)[keyof typeof EventStatus]
-
-
-export const RSVPStatus: {
-  going: 'going',
-  waitlisted: 'waitlisted',
-  cancelled: 'cancelled'
-};
-
-export type RSVPStatus = (typeof RSVPStatus)[keyof typeof RSVPStatus]
-
-}
-
-export type EventStatus = $Enums.EventStatus
-
-export const EventStatus: typeof $Enums.EventStatus
-
-export type RSVPStatus = $Enums.RSVPStatus
-
-export const RSVPStatus: typeof $Enums.RSVPStatus
-
-/**
  * ##  Prisma Client ʲˢ
  *
  * Type-safe database client for TypeScript & Node.js
  * @example
  * ```
- * const prisma = new PrismaClient({
- *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
- * })
+ * const prisma = new PrismaClient()
  * // Fetch zero or more Events
  * const events = await prisma.event.findMany()
  * ```
  *
  *
- * Read more in our [docs](https://pris.ly/d/client).
+ * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
  */
 export class PrismaClient<
   ClientOptions extends Prisma.PrismaClientOptions = Prisma.PrismaClientOptions,
@@ -95,15 +61,13 @@ export class PrismaClient<
    * Type-safe database client for TypeScript & Node.js
    * @example
    * ```
-   * const prisma = new PrismaClient({
-   *   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL })
-   * })
+   * const prisma = new PrismaClient()
    * // Fetch zero or more Events
    * const events = await prisma.event.findMany()
    * ```
    *
    *
-   * Read more in our [docs](https://pris.ly/d/client).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client).
    */
 
   constructor(optionsArg ?: Prisma.Subset<ClientOptions, Prisma.PrismaClientOptions>);
@@ -126,7 +90,7 @@ export class PrismaClient<
    * const result = await prisma.$executeRaw`UPDATE User SET cool = ${true} WHERE email = ${'user@email.com'};`
    * ```
    *
-   * Read more in our [docs](https://pris.ly/d/raw-queries).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
   $executeRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<number>;
 
@@ -138,7 +102,7 @@ export class PrismaClient<
    * const result = await prisma.$executeRawUnsafe('UPDATE User SET cool = $1 WHERE email = $2 ;', true, 'user@email.com')
    * ```
    *
-   * Read more in our [docs](https://pris.ly/d/raw-queries).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
   $executeRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<number>;
 
@@ -149,7 +113,7 @@ export class PrismaClient<
    * const result = await prisma.$queryRaw`SELECT * FROM User WHERE id = ${1} OR email = ${'user@email.com'};`
    * ```
    *
-   * Read more in our [docs](https://pris.ly/d/raw-queries).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
   $queryRaw<T = unknown>(query: TemplateStringsArray | Prisma.Sql, ...values: any[]): Prisma.PrismaPromise<T>;
 
@@ -161,7 +125,7 @@ export class PrismaClient<
    * const result = await prisma.$queryRawUnsafe('SELECT * FROM User WHERE id = $1 OR email = $2;', 1, 'user@email.com')
    * ```
    *
-   * Read more in our [docs](https://pris.ly/d/raw-queries).
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
    */
   $queryRawUnsafe<T = unknown>(query: string, ...values: any[]): Prisma.PrismaPromise<T>;
 
@@ -177,11 +141,12 @@ export class PrismaClient<
    * ])
    * ```
    * 
-   * Read more in our [docs](https://www.prisma.io/docs/orm/prisma-client/queries/transactions).
+   * Read more in our [docs](https://www.prisma.io/docs/concepts/components/prisma-client/transactions).
    */
   $transaction<P extends Prisma.PrismaPromise<any>[]>(arg: [...P], options?: { isolationLevel?: Prisma.TransactionIsolationLevel }): $Utils.JsPromise<runtime.Types.Utils.UnwrapTuple<P>>
 
   $transaction<R>(fn: (prisma: Omit<PrismaClient, runtime.ITXClientDenyList>) => $Utils.JsPromise<R>, options?: { maxWait?: number, timeout?: number, isolationLevel?: Prisma.TransactionIsolationLevel }): $Utils.JsPromise<R>
+
 
   $extends: $Extensions.ExtendsHook<"extends", Prisma.TypeMapCb<ClientOptions>, ExtArgs, $Utils.Call<Prisma.TypeMapCb<ClientOptions>, {
     extArgs: ExtArgs
@@ -266,6 +231,14 @@ export namespace Prisma {
   export type DecimalJsLike = runtime.DecimalJsLike
 
   /**
+   * Metrics
+   */
+  export type Metrics = runtime.Metrics
+  export type Metric<T> = runtime.Metric<T>
+  export type MetricHistogram = runtime.MetricHistogram
+  export type MetricHistogramBucket = runtime.MetricHistogramBucket
+
+  /**
   * Extensions
   */
   export import Extension = $Extensions.UserArgs
@@ -276,12 +249,11 @@ export namespace Prisma {
   export import Exact = $Public.Exact
 
   /**
-   * Prisma Client JS version: 7.6.0
-   * Query Engine version: 75cbdc1eb7150937890ad5465d861175c6624711
+   * Prisma Client JS version: 6.19.3
+   * Query Engine version: c2990dca591cba766e3b7ef5d9e8a84796e47ab7
    */
   export type PrismaVersion = {
     client: string
-    engine: string
   }
 
   export const prismaVersion: PrismaVersion
@@ -669,6 +641,9 @@ export namespace Prisma {
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
 
 
+  export type Datasources = {
+    db?: Datasource
+  }
 
   interface TypeMapCb<ClientOptions = {}> extends $Utils.Fn<{extArgs: $Extensions.InternalArgs }, $Utils.Record<string, any>> {
     returns: Prisma.TypeMap<this['params']['extArgs'], ClientOptions extends { omit: infer OmitOptions } ? OmitOptions : {}>
@@ -1008,6 +983,14 @@ export namespace Prisma {
   export type ErrorFormat = 'pretty' | 'colorless' | 'minimal'
   export interface PrismaClientOptions {
     /**
+     * Overwrites the datasource url from your schema.prisma file
+     */
+    datasources?: Datasources
+    /**
+     * Overwrites the datasource url from your schema.prisma file
+     */
+    datasourceUrl?: string
+    /**
      * @default "colorless"
      */
     errorFormat?: ErrorFormat
@@ -1033,7 +1016,7 @@ export namespace Prisma {
      *  { emit: 'stdout', level: 'error' }
      * 
      * ```
-     * Read more in our [docs](https://pris.ly/d/logging).
+     * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/logging#the-log-option).
      */
     log?: (LogLevel | LogDefinition)[]
     /**
@@ -1049,11 +1032,7 @@ export namespace Prisma {
     /**
      * Instance of a Driver Adapter, e.g., like one provided by `@prisma/adapter-planetscale`
      */
-    adapter?: runtime.SqlDriverAdapterFactory
-    /**
-     * Prisma Accelerate URL allowing the client to connect through Accelerate instead of a direct database.
-     */
-    accelerateUrl?: string
+    adapter?: runtime.SqlDriverAdapterFactory | null
     /**
      * Global configuration for omitting model fields by default.
      * 
@@ -1069,22 +1048,6 @@ export namespace Prisma {
      * ```
      */
     omit?: Prisma.GlobalOmitConfig
-    /**
-     * SQL commenter plugins that add metadata to SQL queries as comments.
-     * Comments follow the sqlcommenter format: https://google.github.io/sqlcommenter/
-     * 
-     * @example
-     * ```
-     * const prisma = new PrismaClient({
-     *   adapter,
-     *   comments: [
-     *     traceContext(),
-     *     queryInsights(),
-     *   ],
-     * })
-     * ```
-     */
-    comments?: runtime.SqlCommenterPlugin[]
   }
   export type GlobalOmitConfig = {
     event?: EventOmit
@@ -1248,7 +1211,7 @@ export namespace Prisma {
     location: string | null
     category: string | null
     capacity: number | null
-    status: $Enums.EventStatus | null
+    status: string | null
     startDateTime: Date | null
     endDateTime: Date | null
     organizerId: string | null
@@ -1263,7 +1226,7 @@ export namespace Prisma {
     location: string | null
     category: string | null
     capacity: number | null
-    status: $Enums.EventStatus | null
+    status: string | null
     startDateTime: Date | null
     endDateTime: Date | null
     organizerId: string | null
@@ -1437,7 +1400,7 @@ export namespace Prisma {
     location: string
     category: string
     capacity: number | null
-    status: $Enums.EventStatus
+    status: string
     startDateTime: Date
     endDateTime: Date
     organizerId: string
@@ -1552,7 +1515,7 @@ export namespace Prisma {
       location: string
       category: string
       capacity: number | null
-      status: $Enums.EventStatus
+      status: string
       startDateTime: Date
       endDateTime: Date
       organizerId: string
@@ -1990,7 +1953,7 @@ export namespace Prisma {
     readonly location: FieldRef<"Event", 'String'>
     readonly category: FieldRef<"Event", 'String'>
     readonly capacity: FieldRef<"Event", 'Int'>
-    readonly status: FieldRef<"Event", 'EventStatus'>
+    readonly status: FieldRef<"Event", 'String'>
     readonly startDateTime: FieldRef<"Event", 'DateTime'>
     readonly endDateTime: FieldRef<"Event", 'DateTime'>
     readonly organizerId: FieldRef<"Event", 'String'>
@@ -2192,11 +2155,6 @@ export namespace Prisma {
      * Skip the first `n` Events.
      */
     skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of Events.
-     */
     distinct?: EventScalarFieldEnum | EventScalarFieldEnum[]
   }
 
@@ -2503,7 +2461,7 @@ export namespace Prisma {
     id: number | null
     eventId: number | null
     userId: string | null
-    status: $Enums.RSVPStatus | null
+    status: string | null
     createdAt: Date | null
   }
 
@@ -2511,7 +2469,7 @@ export namespace Prisma {
     id: number | null
     eventId: number | null
     userId: string | null
-    status: $Enums.RSVPStatus | null
+    status: string | null
     createdAt: Date | null
   }
 
@@ -2650,7 +2608,7 @@ export namespace Prisma {
     id: number
     eventId: number
     userId: string
-    status: $Enums.RSVPStatus
+    status: string
     createdAt: Date
     _count: RSVPCountAggregateOutputType | null
     _avg: RSVPAvgAggregateOutputType | null
@@ -2728,7 +2686,7 @@ export namespace Prisma {
       id: number
       eventId: number
       userId: string
-      status: $Enums.RSVPStatus
+      status: string
       createdAt: Date
     }, ExtArgs["result"]["rSVP"]>
     composites: {}
@@ -3157,7 +3115,7 @@ export namespace Prisma {
     readonly id: FieldRef<"RSVP", 'Int'>
     readonly eventId: FieldRef<"RSVP", 'Int'>
     readonly userId: FieldRef<"RSVP", 'String'>
-    readonly status: FieldRef<"RSVP", 'RSVPStatus'>
+    readonly status: FieldRef<"RSVP", 'String'>
     readonly createdAt: FieldRef<"RSVP", 'DateTime'>
   }
     
@@ -3355,11 +3313,6 @@ export namespace Prisma {
      * Skip the first `n` RSVPS.
      */
     skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of RSVPS.
-     */
     distinct?: RSVPScalarFieldEnum | RSVPScalarFieldEnum[]
   }
 
@@ -4454,11 +4407,6 @@ export namespace Prisma {
      * Skip the first `n` Comments.
      */
     skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of Comments.
-     */
     distinct?: CommentScalarFieldEnum | CommentScalarFieldEnum[]
   }
 
@@ -5510,11 +5458,6 @@ export namespace Prisma {
      * Skip the first `n` SavedEvents.
      */
     skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of SavedEvents.
-     */
     distinct?: SavedEventScalarFieldEnum | SavedEventScalarFieldEnum[]
   }
 
@@ -5826,23 +5769,9 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'EventStatus'
-   */
-  export type EnumEventStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EventStatus'>
-    
-
-
-  /**
    * Reference to a field of type 'DateTime'
    */
   export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
-    
-
-
-  /**
-   * Reference to a field of type 'RSVPStatus'
-   */
-  export type EnumRSVPStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RSVPStatus'>
     
 
 
@@ -5866,7 +5795,7 @@ export namespace Prisma {
     location?: StringFilter<"Event"> | string
     category?: StringFilter<"Event"> | string
     capacity?: IntNullableFilter<"Event"> | number | null
-    status?: EnumEventStatusFilter<"Event"> | $Enums.EventStatus
+    status?: StringFilter<"Event"> | string
     startDateTime?: DateTimeFilter<"Event"> | Date | string
     endDateTime?: DateTimeFilter<"Event"> | Date | string
     organizerId?: StringFilter<"Event"> | string
@@ -5905,7 +5834,7 @@ export namespace Prisma {
     location?: StringFilter<"Event"> | string
     category?: StringFilter<"Event"> | string
     capacity?: IntNullableFilter<"Event"> | number | null
-    status?: EnumEventStatusFilter<"Event"> | $Enums.EventStatus
+    status?: StringFilter<"Event"> | string
     startDateTime?: DateTimeFilter<"Event"> | Date | string
     endDateTime?: DateTimeFilter<"Event"> | Date | string
     organizerId?: StringFilter<"Event"> | string
@@ -5946,7 +5875,7 @@ export namespace Prisma {
     location?: StringWithAggregatesFilter<"Event"> | string
     category?: StringWithAggregatesFilter<"Event"> | string
     capacity?: IntNullableWithAggregatesFilter<"Event"> | number | null
-    status?: EnumEventStatusWithAggregatesFilter<"Event"> | $Enums.EventStatus
+    status?: StringWithAggregatesFilter<"Event"> | string
     startDateTime?: DateTimeWithAggregatesFilter<"Event"> | Date | string
     endDateTime?: DateTimeWithAggregatesFilter<"Event"> | Date | string
     organizerId?: StringWithAggregatesFilter<"Event"> | string
@@ -5961,7 +5890,7 @@ export namespace Prisma {
     id?: IntFilter<"RSVP"> | number
     eventId?: IntFilter<"RSVP"> | number
     userId?: StringFilter<"RSVP"> | string
-    status?: EnumRSVPStatusFilter<"RSVP"> | $Enums.RSVPStatus
+    status?: StringFilter<"RSVP"> | string
     createdAt?: DateTimeFilter<"RSVP"> | Date | string
     event?: XOR<EventScalarRelationFilter, EventWhereInput>
   }
@@ -5983,7 +5912,7 @@ export namespace Prisma {
     NOT?: RSVPWhereInput | RSVPWhereInput[]
     eventId?: IntFilter<"RSVP"> | number
     userId?: StringFilter<"RSVP"> | string
-    status?: EnumRSVPStatusFilter<"RSVP"> | $Enums.RSVPStatus
+    status?: StringFilter<"RSVP"> | string
     createdAt?: DateTimeFilter<"RSVP"> | Date | string
     event?: XOR<EventScalarRelationFilter, EventWhereInput>
   }, "id" | "eventId_userId">
@@ -6008,7 +5937,7 @@ export namespace Prisma {
     id?: IntWithAggregatesFilter<"RSVP"> | number
     eventId?: IntWithAggregatesFilter<"RSVP"> | number
     userId?: StringWithAggregatesFilter<"RSVP"> | string
-    status?: EnumRSVPStatusWithAggregatesFilter<"RSVP"> | $Enums.RSVPStatus
+    status?: StringWithAggregatesFilter<"RSVP"> | string
     createdAt?: DateTimeWithAggregatesFilter<"RSVP"> | Date | string
   }
 
@@ -6118,7 +6047,7 @@ export namespace Prisma {
     location: string
     category: string
     capacity?: number | null
-    status?: $Enums.EventStatus
+    status?: string
     startDateTime: Date | string
     endDateTime: Date | string
     organizerId: string
@@ -6136,7 +6065,7 @@ export namespace Prisma {
     location: string
     category: string
     capacity?: number | null
-    status?: $Enums.EventStatus
+    status?: string
     startDateTime: Date | string
     endDateTime: Date | string
     organizerId: string
@@ -6153,7 +6082,7 @@ export namespace Prisma {
     location?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
     capacity?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
+    status?: StringFieldUpdateOperationsInput | string
     startDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     endDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     organizerId?: StringFieldUpdateOperationsInput | string
@@ -6171,7 +6100,7 @@ export namespace Prisma {
     location?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
     capacity?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
+    status?: StringFieldUpdateOperationsInput | string
     startDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     endDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     organizerId?: StringFieldUpdateOperationsInput | string
@@ -6189,7 +6118,7 @@ export namespace Prisma {
     location: string
     category: string
     capacity?: number | null
-    status?: $Enums.EventStatus
+    status?: string
     startDateTime: Date | string
     endDateTime: Date | string
     organizerId: string
@@ -6203,7 +6132,7 @@ export namespace Prisma {
     location?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
     capacity?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
+    status?: StringFieldUpdateOperationsInput | string
     startDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     endDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     organizerId?: StringFieldUpdateOperationsInput | string
@@ -6218,7 +6147,7 @@ export namespace Prisma {
     location?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
     capacity?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
+    status?: StringFieldUpdateOperationsInput | string
     startDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     endDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     organizerId?: StringFieldUpdateOperationsInput | string
@@ -6228,7 +6157,7 @@ export namespace Prisma {
 
   export type RSVPCreateInput = {
     userId: string
-    status?: $Enums.RSVPStatus
+    status?: string
     createdAt?: Date | string
     event: EventCreateNestedOneWithoutRsvpsInput
   }
@@ -6237,13 +6166,13 @@ export namespace Prisma {
     id?: number
     eventId: number
     userId: string
-    status?: $Enums.RSVPStatus
+    status?: string
     createdAt?: Date | string
   }
 
   export type RSVPUpdateInput = {
     userId?: StringFieldUpdateOperationsInput | string
-    status?: EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+    status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     event?: EventUpdateOneRequiredWithoutRsvpsNestedInput
   }
@@ -6252,7 +6181,7 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     eventId?: IntFieldUpdateOperationsInput | number
     userId?: StringFieldUpdateOperationsInput | string
-    status?: EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+    status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -6260,13 +6189,13 @@ export namespace Prisma {
     id?: number
     eventId: number
     userId: string
-    status?: $Enums.RSVPStatus
+    status?: string
     createdAt?: Date | string
   }
 
   export type RSVPUpdateManyMutationInput = {
     userId?: StringFieldUpdateOperationsInput | string
-    status?: EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+    status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -6274,7 +6203,7 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     eventId?: IntFieldUpdateOperationsInput | number
     userId?: StringFieldUpdateOperationsInput | string
-    status?: EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+    status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -6398,13 +6327,6 @@ export namespace Prisma {
     gt?: number | IntFieldRefInput<$PrismaModel>
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type EnumEventStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.EventStatus | EnumEventStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.EventStatus[]
-    notIn?: $Enums.EventStatus[]
-    not?: NestedEnumEventStatusFilter<$PrismaModel> | $Enums.EventStatus
   }
 
   export type DateTimeFilter<$PrismaModel = never> = {
@@ -6557,16 +6479,6 @@ export namespace Prisma {
     _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
-  export type EnumEventStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.EventStatus | EnumEventStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.EventStatus[]
-    notIn?: $Enums.EventStatus[]
-    not?: NestedEnumEventStatusWithAggregatesFilter<$PrismaModel> | $Enums.EventStatus
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumEventStatusFilter<$PrismaModel>
-    _max?: NestedEnumEventStatusFilter<$PrismaModel>
-  }
-
   export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[]
@@ -6579,13 +6491,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
-  }
-
-  export type EnumRSVPStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.RSVPStatus | EnumRSVPStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.RSVPStatus[]
-    notIn?: $Enums.RSVPStatus[]
-    not?: NestedEnumRSVPStatusFilter<$PrismaModel> | $Enums.RSVPStatus
   }
 
   export type EventScalarRelationFilter = {
@@ -6630,16 +6535,6 @@ export namespace Prisma {
   export type RSVPSumOrderByAggregateInput = {
     id?: SortOrder
     eventId?: SortOrder
-  }
-
-  export type EnumRSVPStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.RSVPStatus | EnumRSVPStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.RSVPStatus[]
-    notIn?: $Enums.RSVPStatus[]
-    not?: NestedEnumRSVPStatusWithAggregatesFilter<$PrismaModel> | $Enums.RSVPStatus
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumRSVPStatusFilter<$PrismaModel>
-    _max?: NestedEnumRSVPStatusFilter<$PrismaModel>
   }
 
   export type CommentCountOrderByAggregateInput = {
@@ -6758,10 +6653,6 @@ export namespace Prisma {
     divide?: number
   }
 
-  export type EnumEventStatusFieldUpdateOperationsInput = {
-    set?: $Enums.EventStatus
-  }
-
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string
   }
@@ -6864,10 +6755,6 @@ export namespace Prisma {
     connect?: EventWhereUniqueInput
   }
 
-  export type EnumRSVPStatusFieldUpdateOperationsInput = {
-    set?: $Enums.RSVPStatus
-  }
-
   export type EventUpdateOneRequiredWithoutRsvpsNestedInput = {
     create?: XOR<EventCreateWithoutRsvpsInput, EventUncheckedCreateWithoutRsvpsInput>
     connectOrCreate?: EventCreateOrConnectWithoutRsvpsInput
@@ -6938,13 +6825,6 @@ export namespace Prisma {
     gt?: number | IntFieldRefInput<$PrismaModel>
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type NestedEnumEventStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.EventStatus | EnumEventStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.EventStatus[]
-    notIn?: $Enums.EventStatus[]
-    not?: NestedEnumEventStatusFilter<$PrismaModel> | $Enums.EventStatus
   }
 
   export type NestedDateTimeFilter<$PrismaModel = never> = {
@@ -7029,16 +6909,6 @@ export namespace Prisma {
     not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
 
-  export type NestedEnumEventStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.EventStatus | EnumEventStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.EventStatus[]
-    notIn?: $Enums.EventStatus[]
-    not?: NestedEnumEventStatusWithAggregatesFilter<$PrismaModel> | $Enums.EventStatus
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumEventStatusFilter<$PrismaModel>
-    _max?: NestedEnumEventStatusFilter<$PrismaModel>
-  }
-
   export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[]
@@ -7053,33 +6923,16 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
-  export type NestedEnumRSVPStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.RSVPStatus | EnumRSVPStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.RSVPStatus[]
-    notIn?: $Enums.RSVPStatus[]
-    not?: NestedEnumRSVPStatusFilter<$PrismaModel> | $Enums.RSVPStatus
-  }
-
-  export type NestedEnumRSVPStatusWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.RSVPStatus | EnumRSVPStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.RSVPStatus[]
-    notIn?: $Enums.RSVPStatus[]
-    not?: NestedEnumRSVPStatusWithAggregatesFilter<$PrismaModel> | $Enums.RSVPStatus
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumRSVPStatusFilter<$PrismaModel>
-    _max?: NestedEnumRSVPStatusFilter<$PrismaModel>
-  }
-
   export type RSVPCreateWithoutEventInput = {
     userId: string
-    status?: $Enums.RSVPStatus
+    status?: string
     createdAt?: Date | string
   }
 
   export type RSVPUncheckedCreateWithoutEventInput = {
     id?: number
     userId: string
-    status?: $Enums.RSVPStatus
+    status?: string
     createdAt?: Date | string
   }
 
@@ -7154,7 +7007,7 @@ export namespace Prisma {
     id?: IntFilter<"RSVP"> | number
     eventId?: IntFilter<"RSVP"> | number
     userId?: StringFilter<"RSVP"> | string
-    status?: EnumRSVPStatusFilter<"RSVP"> | $Enums.RSVPStatus
+    status?: StringFilter<"RSVP"> | string
     createdAt?: DateTimeFilter<"RSVP"> | Date | string
   }
 
@@ -7215,7 +7068,7 @@ export namespace Prisma {
     location: string
     category: string
     capacity?: number | null
-    status?: $Enums.EventStatus
+    status?: string
     startDateTime: Date | string
     endDateTime: Date | string
     organizerId: string
@@ -7232,7 +7085,7 @@ export namespace Prisma {
     location: string
     category: string
     capacity?: number | null
-    status?: $Enums.EventStatus
+    status?: string
     startDateTime: Date | string
     endDateTime: Date | string
     organizerId: string
@@ -7264,7 +7117,7 @@ export namespace Prisma {
     location?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
     capacity?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
+    status?: StringFieldUpdateOperationsInput | string
     startDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     endDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     organizerId?: StringFieldUpdateOperationsInput | string
@@ -7281,7 +7134,7 @@ export namespace Prisma {
     location?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
     capacity?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
+    status?: StringFieldUpdateOperationsInput | string
     startDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     endDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     organizerId?: StringFieldUpdateOperationsInput | string
@@ -7297,7 +7150,7 @@ export namespace Prisma {
     location: string
     category: string
     capacity?: number | null
-    status?: $Enums.EventStatus
+    status?: string
     startDateTime: Date | string
     endDateTime: Date | string
     organizerId: string
@@ -7314,7 +7167,7 @@ export namespace Prisma {
     location: string
     category: string
     capacity?: number | null
-    status?: $Enums.EventStatus
+    status?: string
     startDateTime: Date | string
     endDateTime: Date | string
     organizerId: string
@@ -7346,7 +7199,7 @@ export namespace Prisma {
     location?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
     capacity?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
+    status?: StringFieldUpdateOperationsInput | string
     startDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     endDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     organizerId?: StringFieldUpdateOperationsInput | string
@@ -7363,7 +7216,7 @@ export namespace Prisma {
     location?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
     capacity?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
+    status?: StringFieldUpdateOperationsInput | string
     startDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     endDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     organizerId?: StringFieldUpdateOperationsInput | string
@@ -7379,7 +7232,7 @@ export namespace Prisma {
     location: string
     category: string
     capacity?: number | null
-    status?: $Enums.EventStatus
+    status?: string
     startDateTime: Date | string
     endDateTime: Date | string
     organizerId: string
@@ -7396,7 +7249,7 @@ export namespace Prisma {
     location: string
     category: string
     capacity?: number | null
-    status?: $Enums.EventStatus
+    status?: string
     startDateTime: Date | string
     endDateTime: Date | string
     organizerId: string
@@ -7428,7 +7281,7 @@ export namespace Prisma {
     location?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
     capacity?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
+    status?: StringFieldUpdateOperationsInput | string
     startDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     endDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     organizerId?: StringFieldUpdateOperationsInput | string
@@ -7445,7 +7298,7 @@ export namespace Prisma {
     location?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
     capacity?: NullableIntFieldUpdateOperationsInput | number | null
-    status?: EnumEventStatusFieldUpdateOperationsInput | $Enums.EventStatus
+    status?: StringFieldUpdateOperationsInput | string
     startDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     endDateTime?: DateTimeFieldUpdateOperationsInput | Date | string
     organizerId?: StringFieldUpdateOperationsInput | string
@@ -7458,7 +7311,7 @@ export namespace Prisma {
   export type RSVPCreateManyEventInput = {
     id?: number
     userId: string
-    status?: $Enums.RSVPStatus
+    status?: string
     createdAt?: Date | string
   }
 
@@ -7475,21 +7328,21 @@ export namespace Prisma {
 
   export type RSVPUpdateWithoutEventInput = {
     userId?: StringFieldUpdateOperationsInput | string
-    status?: EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+    status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type RSVPUncheckedUpdateWithoutEventInput = {
     id?: IntFieldUpdateOperationsInput | number
     userId?: StringFieldUpdateOperationsInput | string
-    status?: EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+    status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type RSVPUncheckedUpdateManyWithoutEventInput = {
     id?: IntFieldUpdateOperationsInput | number
     userId?: StringFieldUpdateOperationsInput | string
-    status?: EnumRSVPStatusFieldUpdateOperationsInput | $Enums.RSVPStatus
+    status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 

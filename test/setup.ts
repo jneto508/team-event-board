@@ -1,15 +1,69 @@
 
-
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@prisma/client";
 
 const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL ?? "file:./dev.db",
+  url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
 });
 
 const prisma = new PrismaClient({ adapter });
 
+beforeAll(async () => {
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS "Event" (
+      "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      "title" TEXT NOT NULL,
+      "description" TEXT NOT NULL,
+      "location" TEXT NOT NULL,
+      "category" TEXT NOT NULL,
+      "capacity" INTEGER,
+      "status" TEXT NOT NULL DEFAULT 'draft',
+      "startDateTime" DATETIME NOT NULL,
+      "endDateTime" DATETIME NOT NULL,
+      "organizerId" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS "RSVP" (
+      "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      "eventId" INTEGER NOT NULL,
+      "userId" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'going',
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "RSVP_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS "Comment" (
+      "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      "eventId" INTEGER NOT NULL,
+      "userId" TEXT NOT NULL,
+      "content" TEXT NOT NULL,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Comment_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS "SavedEvent" (
+      "userId" TEXT NOT NULL,
+      "eventId" INTEGER NOT NULL,
+      PRIMARY KEY ("userId", "eventId"),
+      CONSTRAINT "SavedEvent_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`,
+    `CREATE INDEX IF NOT EXISTS "Event_organizerId_idx" ON "Event"("organizerId")`,
+    `CREATE INDEX IF NOT EXISTS "Event_status_endDateTime_idx" ON "Event"("status", "endDateTime")`,
+    `CREATE INDEX IF NOT EXISTS "Event_category_status_idx" ON "Event"("category", "status")`,
+    `CREATE INDEX IF NOT EXISTS "RSVP_userId_status_idx" ON "RSVP"("userId", "status")`,
+    `CREATE INDEX IF NOT EXISTS "RSVP_eventId_status_createdAt_idx" ON "RSVP"("eventId", "status", "createdAt")`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS "RSVP_eventId_userId_key" ON "RSVP"("eventId", "userId")`,
+    `CREATE INDEX IF NOT EXISTS "Comment_eventId_createdAt_idx" ON "Comment"("eventId", "createdAt")`,
+    `CREATE INDEX IF NOT EXISTS "Comment_userId_idx" ON "Comment"("userId")`,
+    `CREATE INDEX IF NOT EXISTS "SavedEvent_eventId_idx" ON "SavedEvent"("eventId")`,
+  ];
+
+  for (const statement of statements) {
+    await prisma.$executeRawUnsafe(statement);
+  }
+});
+
 beforeEach(async () => {
+  await prisma.savedEvent.deleteMany();
   await prisma.comment.deleteMany();
   await prisma.rSVP.deleteMany();
   await prisma.event.deleteMany();

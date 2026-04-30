@@ -27,6 +27,7 @@ import type {
   ICommentRepository,
   IEventRepository,
   IRSVPRepository,
+  RSVPWithEvent,
   RSVPFilterStatus,
 } from "./EventRepository";
 
@@ -403,6 +404,34 @@ class PrismaEventRepository
       return Ok({ attendeeCount, waitlistCount });
     } catch {
       return Err(RSVPUnexpectedDependencyError("Failed to count event RSVPs."));
+  async listRSVPsWithEventsByUser(
+    userId: string,
+    filterStatus: RSVPFilterStatus = "all",
+  ): Promise<Result<RSVPWithEvent[], RSVPError>> {
+    try {
+      const rows = await this.prisma.rSVP.findMany({
+        where:
+          filterStatus === "all"
+            ? { userId }
+            : { userId, status: filterStatus },
+        include: {
+          event: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      });
+
+      return Ok(
+        rows.map((row) => {
+          return {
+            rsvp: toIRSVP(row),
+            event: toIEvent(row.event),
+          };
+        }),
+      );
+    } catch {
+      return Err(RSVPUnexpectedDependencyError("Failed to list user RSVPs."));
     }
   }
 

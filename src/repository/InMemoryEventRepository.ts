@@ -17,6 +17,7 @@ import type {
   ICommentRepository,
   IEventRepository,
   IRSVPRepository,
+  RSVPWithEvent,
   RSVPFilterStatus,
 } from "./EventRepository";
 import {
@@ -421,6 +422,42 @@ class InMemoryEventRepository
       return Ok({ attendeeCount, waitlistCount });
     } catch {
       return Err(UnexpectedRsvpDependencyError("Unable to count event RSVPs."));
+  async listRSVPsWithEventsByUser(
+    userId: string,
+    filterStatus: RSVPFilterStatus = "all",
+  ): Promise<Result<RSVPWithEvent[], RSVPError>> {
+    try {
+      const entries: RSVPWithEvent[] = [];
+
+      for (const rsvp of this.rsvps) {
+        if (rsvp.userId !== userId || !matchesRsvpStatusFilter(rsvp, filterStatus)) {
+          continue;
+        }
+
+        const event = this.events.find((candidate) => candidate.id === rsvp.eventId);
+        if (!event) {
+          return Err(
+            UnexpectedRsvpDependencyError(
+              `Unable to load event ${rsvp.eventId} for RSVP ${rsvp.id}.`,
+            ),
+          );
+        }
+
+        entries.push({ rsvp, event });
+      }
+
+      entries.sort((left, right) => {
+        const byCreatedAt = left.rsvp.createdAt.getTime() - right.rsvp.createdAt.getTime();
+        if (byCreatedAt !== 0) {
+          return byCreatedAt;
+        }
+
+        return left.rsvp.id - right.rsvp.id;
+      });
+
+      return Ok(entries);
+    } catch {
+      return Err(UnexpectedRsvpDependencyError("Unable to list user RSVPs."));
     }
   }
 

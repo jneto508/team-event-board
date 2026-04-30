@@ -30,6 +30,10 @@ export type CreateCommentInput = {
 
 export type EventFilterStatus = "all" | EventStatus;
 export type RSVPFilterStatus = "all" | RSVPStatus;
+export type RSVPWithEvent = {
+    rsvp: IRSVP;
+    event: IEvent;
+};
 
 export interface IEventRepository {
     createEvent(data: CreateEventInput): Promise<Result<IEvent, EventError>>;
@@ -76,6 +80,10 @@ export interface IRSVPRepository {
     getEventAttendanceCounts(
         eventId: number,
     ): Promise<Result<{ attendeeCount: number; waitlistCount: number }, RSVPError>>;
+    listRSVPsWithEventsByUser(
+        userId: string,
+        filterStatus?: RSVPFilterStatus,
+    ): Promise<Result<RSVPWithEvent[], RSVPError>>;
     updateRSVPStatus(
         id: number,
         status: RSVPStatus,
