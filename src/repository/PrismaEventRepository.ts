@@ -404,6 +404,9 @@ class PrismaEventRepository
       return Ok({ attendeeCount, waitlistCount });
     } catch {
       return Err(RSVPUnexpectedDependencyError("Failed to count event RSVPs."));
+    }
+  }
+
   async listRSVPsWithEventsByUser(
     userId: string,
     filterStatus: RSVPFilterStatus = "all",
