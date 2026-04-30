@@ -6,7 +6,6 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
 }
 
 model Event {
@@ -63,4 +62,14 @@ model SavedEvent {
 
   @@id([userId, eventId])
   @@index([eventId])
+}
+
+model User {
+  id           String @id
+  email        String @unique
+  displayName  String
+  role         String
+  passwordHash String
+
+  @@index([role])
 }
