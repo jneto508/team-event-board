@@ -155,7 +155,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/josh/Code/CS326/team-event-board/src/generated/prisma/client",
+      "value": "C:\\Users\\joshu\\OneDrive\\Documents\\Code\\team-event-board\\src\\generated\\prisma\\client",
       "fromEnvVar": null
     },
     "config": {
@@ -164,14 +164,20 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "darwin-arm64",
+        "value": "windows",
         "native": true
+      },
+      {
+        "fromEnvVar": null,
+        "value": "darwin-arm64"
+      },
+      {
+        "fromEnvVar": null,
+        "value": "windows"
       }
     ],
-    "previewFeatures": [
-      "driverAdapters"
-    ],
-    "sourceFilePath": "/Users/josh/Code/CS326/team-event-board/prisma/schema.prisma",
+    "previewFeatures": [],
+    "sourceFilePath": "C:\\Users\\joshu\\OneDrive\\Documents\\Code\\team-event-board\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -193,8 +199,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider        = \"prisma-client-js\"\n  output          = \"../src/generated/prisma/client\"\n  previewFeatures = [\"driverAdapters\"]\n}\n\ndatasource db {\n  provider = \"sqlite\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Event {\n  id            Int          @id @default(autoincrement())\n  title         String\n  description   String\n  location      String\n  category      String\n  capacity      Int?\n  status        String       @default(\"draft\")\n  startDateTime DateTime\n  endDateTime   DateTime\n  organizerId   String\n  createdAt     DateTime     @default(now())\n  updatedAt     DateTime     @updatedAt\n  rsvps         RSVP[]\n  comments      Comment[]\n  savedBy       SavedEvent[]\n\n  @@index([organizerId])\n  @@index([status, endDateTime])\n  @@index([category, status])\n}\n\nmodel RSVP {\n  id        Int      @id @default(autoincrement())\n  eventId   Int\n  userId    String\n  status    String   @default(\"going\")\n  createdAt DateTime @default(now())\n  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)\n\n  @@unique([eventId, userId])\n  @@index([userId, status])\n  @@index([eventId, status, createdAt])\n}\n\nmodel Comment {\n  id        Int      @id @default(autoincrement())\n  eventId   Int\n  userId    String\n  content   String\n  createdAt DateTime @default(now())\n  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)\n\n  @@index([eventId, createdAt])\n  @@index([userId])\n}\n\nmodel SavedEvent {\n  userId  String\n  eventId Int\n  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)\n\n  @@id([userId, eventId])\n  @@index([eventId])\n}\n",
-  "inlineSchemaHash": "3e3d918d772827108ea806470e6c06d7670d6a2a9e97b567caaea971d96742c6",
+  "inlineSchema": "generator client {\n  provider      = \"prisma-client-js\"\n  output        = \"../src/generated/prisma/client\"\n  binaryTargets = [\"native\", \"darwin-arm64\", \"windows\"]\n}\n\ndatasource db {\n  provider = \"sqlite\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Event {\n  id            Int          @id @default(autoincrement())\n  title         String\n  description   String\n  location      String\n  category      String\n  capacity      Int?\n  status        String       @default(\"draft\")\n  startDateTime DateTime\n  endDateTime   DateTime\n  organizerId   String\n  createdAt     DateTime     @default(now())\n  updatedAt     DateTime     @updatedAt\n  rsvps         RSVP[]\n  comments      Comment[]\n  savedBy       SavedEvent[]\n\n  @@index([organizerId])\n  @@index([status, endDateTime])\n  @@index([category, status])\n}\n\nmodel RSVP {\n  id        Int      @id @default(autoincrement())\n  eventId   Int\n  userId    String\n  status    String   @default(\"going\")\n  createdAt DateTime @default(now())\n  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)\n\n  @@unique([eventId, userId])\n  @@index([userId, status])\n  @@index([eventId, status, createdAt])\n}\n\nmodel Comment {\n  id        Int      @id @default(autoincrement())\n  eventId   Int\n  userId    String\n  content   String\n  createdAt DateTime @default(now())\n  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)\n\n  @@index([eventId, createdAt])\n  @@index([userId])\n}\n\nmodel SavedEvent {\n  userId  String\n  eventId Int\n  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)\n\n  @@id([userId, eventId])\n  @@index([eventId])\n}\n",
+  "inlineSchemaHash": "407d0bb0ebcd991967d4810f0731bb926c059575f5a3230f7808cf0ce504e539",
   "copyEngine": true
 }
 
@@ -231,6 +237,10 @@ warnEnvConflicts({
 const PrismaClient = getPrismaClient(config)
 exports.PrismaClient = PrismaClient
 Object.assign(exports, Prisma)
+
+// file annotations for bundling tools to include these files
+path.join(__dirname, "query_engine-windows.dll.node");
+path.join(process.cwd(), "src/generated/prisma/client/query_engine-windows.dll.node")
 
 // file annotations for bundling tools to include these files
 path.join(__dirname, "libquery_engine-darwin-arm64.dylib.node");

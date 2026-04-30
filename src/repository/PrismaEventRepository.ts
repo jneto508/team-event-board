@@ -4,7 +4,7 @@ import {
   type Event as PrismaEvent,
   type RSVP as PrismaRSVP,
   type Comment as PrismaComment,
-} from "@prisma/client";
+} from "../generated/prisma/client";
 import { Err, Ok, type Result } from "../lib/result";
 import { type EventStatus, type IEvent } from "../model/Event";
 import { type IRSVP, type RSVPStatus } from "../model/RSVP";
