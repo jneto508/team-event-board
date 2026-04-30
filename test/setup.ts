@@ -1,13 +1,7 @@
 
-import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../src/generated/prisma/client";
 
-const adapter = new PrismaBetterSQLite3({
-  url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
-});
-
-const prisma = new PrismaClient({ adapter });
-
+const prisma = new PrismaClient();
 beforeAll(async () => {
   const statements = [
     `CREATE TABLE IF NOT EXISTS "User" (
@@ -70,7 +64,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.user.deleteMany();
+  //await prisma.user.deleteMany();
   await prisma.savedEvent.deleteMany();
   await prisma.comment.deleteMany();
   await prisma.rSVP.deleteMany();
