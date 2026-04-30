@@ -1,9 +1,23 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
+import {
+  disconnectPrismaTestDb,
+  resetPrismaEventData,
+} from "../prismaTestUtils";
 
 describe("GET /my-rsvps", () => {
+  const mode = "prisma";
+
+  beforeEach(async () => {
+    await resetPrismaEventData();
+  });
+
+  afterAll(async () => {
+    await disconnectPrismaTestDb();
+  });
+
   it("redirects unauthenticated visitors to login", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
 
     const response = await request(app).get("/my-rsvps");
 
@@ -12,7 +26,7 @@ describe("GET /my-rsvps", () => {
   });
 
   it("renders the dashboard for signed-in members", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await agent.post("/login").type("form").send({
@@ -31,7 +45,7 @@ describe("GET /my-rsvps", () => {
   });
 
   it("blocks staff users from opening the member dashboard", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await agent.post("/login").type("form").send({
@@ -46,7 +60,7 @@ describe("GET /my-rsvps", () => {
   });
 
   it("blocks organizers from the inline dashboard cancel action", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await agent.post("/login").type("form").send({
@@ -64,7 +78,7 @@ describe("GET /my-rsvps", () => {
   });
 
   it("updates the dashboard inline when a member cancels an upcoming RSVP", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await agent.post("/login").type("form").send({
@@ -86,7 +100,7 @@ describe("GET /my-rsvps", () => {
   });
 
   it("lets a waitlisted member leave the waitlist from the dashboard inline", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await agent.post("/login").type("form").send({

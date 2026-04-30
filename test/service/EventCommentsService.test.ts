@@ -116,7 +116,7 @@ describe("EventCommentsService", () => {
       CreateInMemoryUserRepository(),
     );
 
-    const result = await service.deleteComment("user-staff", "3");
+    const result = await service.deleteComment("user-reader", "3");
 
     expect(result.ok).toBe(false);
     if (!result.ok) {

@@ -1,11 +1,23 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
+import {
+  disconnectPrismaTestDb,
+  resetPrismaEventData,
+} from "../prismaTestUtils";
 
 describe("Event comments routes", () => {
-  type TestAgent = ReturnType<typeof request.agent>;
+  const mode = "prisma";
+
+  beforeEach(async () => {
+    await resetPrismaEventData();
+  });
+
+  afterAll(async () => {
+    await disconnectPrismaTestDb();
+  });
 
   async function login(
-    agent: TestAgent,
+    agent: request.Agent,
     email: string,
   ): Promise<void> {
     await agent.post("/login").type("form").send({
@@ -15,7 +27,7 @@ describe("Event comments routes", () => {
   }
 
   it("shows a published event detail page to an authenticated user", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await login(agent, "user@app.test");
@@ -28,7 +40,7 @@ describe("Event comments routes", () => {
   });
 
   it("creates a comment via HTMX without a full page reload", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await login(agent, "user@app.test");
@@ -45,7 +57,7 @@ describe("Event comments routes", () => {
   });
 
   it("lets an author delete their own comment through HTMX", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await login(agent, "user@app.test");
@@ -59,7 +71,7 @@ describe("Event comments routes", () => {
   });
 
   it("lets an organizer delete a comment from their event through HTMX", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await login(agent, "staff@app.test");
@@ -73,10 +85,10 @@ describe("Event comments routes", () => {
   });
 
   it("rejects unauthorized comment deletion through HTMX", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
-    await login(agent, "staff@app.test");
+    await login(agent, "user@app.test");
 
     const response = await agent
       .post("/events/2/comments/3/delete")

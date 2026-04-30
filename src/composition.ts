@@ -1,3 +1,5 @@
+import { PrismaClient } from "@prisma/client";
+import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
 import { CreateAdminUserService } from "./auth/AdminUserService";
 import { CreateAuthController } from "./auth/AuthController";
 import { CreateAuthService } from "./auth/AuthService";
@@ -11,6 +13,7 @@ import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
 import { CreateInMemoryEventRepository } from "./repository/InMemoryEventRepository";
 import { CreateInMemorySavedEventRepository } from "./repository/InMemorySavedEventRepository";
+import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
 import { CreateEventService } from "./service/EventService";
 import { CreateRSVPService } from "./service/RSVPService";
 import { SavedEventService } from "./service/SavedEventService";
@@ -19,7 +22,7 @@ import { CreateEventCommentsService } from "./service/EventCommentsService";
 import { CreateEventCommentsController } from "./controller/EventCommentsController";
 import { CreateAttendeeListService } from "./service/AttendeeListService";
 
-export function createComposedApp(logger?: ILoggingService): IApp {
+export function createComposedApp(mode: "memory" | "prisma", logger?: ILoggingService): IApp {
     const resolvedLogger = logger ?? CreateLoggingService();
 
     // Authentication & authorization wiring
@@ -34,8 +37,31 @@ export function createComposedApp(logger?: ILoggingService): IApp {
     );
 
     // Repository wiring
-    const eventRepository = CreateInMemoryEventRepository();
-    const savedEventRepository = CreateInMemorySavedEventRepository();
+    const databaseUrl =
+        process.env.NODE_ENV === "test"
+            ? process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL
+            : process.env.DATABASE_URL;
+
+
+    const prismaRepository = 
+        CreatePrismaEventRepository(
+            new PrismaClient({
+            adapter: new PrismaBetterSQLite3({
+                url: databaseUrl,
+            }),
+        }),
+    );
+
+    const eventRepository =
+    mode === "prisma"
+        ? prismaRepository
+        : CreateInMemoryEventRepository();
+
+    const savedEventRepository =
+    mode === "prisma"
+        ? prismaRepository
+        : CreateInMemorySavedEventRepository();
+
 
     // Event wiring
     const eventService = CreateEventService(eventRepository);
