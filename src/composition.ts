@@ -37,11 +37,17 @@ export function createComposedApp(mode: "memory" | "prisma", logger?: ILoggingSe
     );
 
     // Repository wiring
+    const databaseUrl =
+        process.env.NODE_ENV === "test"
+            ? process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL
+            : process.env.DATABASE_URL;
+
+
     const prismaRepository = 
         CreatePrismaEventRepository(
             new PrismaClient({
             adapter: new PrismaBetterSQLite3({
-                url: process.env.DATABASE_URL ?? "file:./prisma/prisma/dev.db",
+                url: databaseUrl,
             }),
         }),
     );
