@@ -38,7 +38,8 @@ export interface IEventRepository {
         organizerId: string,
     ): Promise<Result<IEvent[], EventError>>;
     getAllEvents(): Promise<Result<IEvent[], EventError>>;
-    getAllArchived(): Promise<Result<IEvent[], EventError>>;
+    getArchivedEvents(category?: string): Promise<Result<IEvent[], EventError>>;
+    archiveExpiredEvents(now: Date): Promise<Result<number, EventError>>;
     deleteEvent(id: number): Promise<Result<void, EventError>>;
     updateEvent(
         id: number,
@@ -72,6 +73,9 @@ export interface IRSVPRepository {
         userId: string,
         filterStatus?: RSVPFilterStatus,
     ): Promise<Result<IRSVP[], RSVPError>>;
+    getEventAttendanceCounts(
+        eventId: number,
+    ): Promise<Result<{ attendeeCount: number; waitlistCount: number }, RSVPError>>;
     updateRSVPStatus(
         id: number,
         status: RSVPStatus,
