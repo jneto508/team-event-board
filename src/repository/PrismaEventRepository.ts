@@ -1,9 +1,10 @@
 import {
+  Prisma,
   type PrismaClient,
   type Event as PrismaEvent,
   type RSVP as PrismaRSVP,
   type Comment as PrismaComment,
-} from "../generated/prisma/client";
+} from "@prisma/client";
 import { Err, Ok, type Result } from "../lib/result";
 import { type EventStatus, type IEvent } from "../model/Event";
 import { type IRSVP, type RSVPStatus } from "../model/RSVP";
@@ -136,14 +137,45 @@ class PrismaEventRepository
     }
   }
 
-  async getAllArchived(): Promise<Result<IEvent[], EventError>> {
+  async getArchivedEvents(category?: string): Promise<Result<IEvent[], EventError>> {
     try {
+      const normalizedCategory = String(category ?? "").trim().toLowerCase();
       const rows = await this.prisma.event.findMany({
-        where: { status: { in: ["past", "cancelled"] } },
+        where: {
+          status: { in: ["past", "cancelled"] },
+          ...(normalizedCategory === ""
+            ? {}
+            : {
+                category: normalizedCategory,
+              }),
+        },
+        orderBy: { endDateTime: "desc" },
       });
       return Ok(rows.map(toIEvent));
     } catch {
       return Err(UnexpectedEventError("Failed to list archived events."));
+    }
+  }
+
+  async archiveExpiredEvents(now: Date): Promise<Result<number, EventError>> {
+    try {
+      const result = await this.prisma.event.updateMany({
+        where: {
+          status: {
+            notIn: ["past", "cancelled"],
+          },
+          endDateTime: {
+            lte: now,
+          },
+        },
+        data: {
+          status: "past",
+        },
+      });
+
+      return Ok(result.count);
+    } catch {
+      return Err(UnexpectedEventError("Failed to archive expired events."));
     }
   }
 
@@ -340,6 +372,38 @@ class PrismaEventRepository
     }
   }
 
+  async getEventAttendanceCounts(
+    eventId: number,
+  ): Promise<Result<{ attendeeCount: number; waitlistCount: number }, RSVPError>> {
+    try {
+      const grouped = await this.prisma.rSVP.groupBy({
+        by: ["status"],
+        where: {
+          eventId,
+          status: {
+            in: ["going", "waitlisted"],
+          },
+        },
+        _count: {
+          _all: true,
+        },
+      });
+
+      let attendeeCount = 0;
+      let waitlistCount = 0;
+
+      for (const row of grouped) {
+        if (row.status === "going") {
+          attendeeCount = row._count._all;
+        }
+        if (row.status === "waitlisted") {
+          waitlistCount = row._count._all;
+        }
+      }
+
+      return Ok({ attendeeCount, waitlistCount });
+    } catch {
+      return Err(RSVPUnexpectedDependencyError("Failed to count event RSVPs."));
   async listRSVPsWithEventsByUser(
     userId: string,
     filterStatus: RSVPFilterStatus = "all",
@@ -383,7 +447,13 @@ class PrismaEventRepository
         data: { status },
       });
       return Ok(toIRSVP(row));
-    } catch {
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        return Err(RSVPNotFound(`RSVP ${id} was not found.`));
+      }
       return Err(RSVPUnexpectedDependencyError("Failed to update RSVP."));
     }
   }

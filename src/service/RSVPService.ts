@@ -52,19 +52,7 @@ export class RSVPService implements IRSVPService {
     private async getAttendanceSnapshot(
         eventId: number,
     ): Promise<Result<{ attendeeCount: number; waitlistCount: number }, RSVPError>> {
-        const rsvpsResult = await this.rsvpRepository.listRSVPsByEvent(eventId);
-        if (rsvpsResult.ok === false) {
-            return Err(rsvpsResult.value);
-        }
-
-        const attendeeCount = rsvpsResult.value.filter(
-            (rsvp) => rsvp.status === "going",
-        ).length;
-        const waitlistCount = rsvpsResult.value.filter(
-            (rsvp) => rsvp.status === "waitlisted",
-        ).length;
-
-        return Ok({ attendeeCount, waitlistCount });
+        return this.rsvpRepository.getEventAttendanceCounts(eventId);
     }
 
     private async resolveActiveStatus(
