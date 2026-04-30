@@ -1,7 +1,7 @@
 import { CreateAdminUserService } from "./auth/AdminUserService";
 import { CreateAuthController } from "./auth/AuthController";
 import { CreateAuthService } from "./auth/AuthService";
-import { CreatePrismaUserRepository } from "./auth/PrismaUserRepository";
+//import { CreatePrismaUserRepository } from "./auth/PrismaUserRepository";
 import { CreatePasswordHasher } from "./auth/PasswordHasher";
 import { CreateApp } from "./app";
 import type { IApp } from "./contracts";
@@ -9,7 +9,7 @@ import { CreateMemberRsvpsDashboardController } from "./rsvps/MemberRsvpsDashboa
 import { CreateMemberRsvpsDashboardService } from "./service/MemberRsvpsDashboardService";
 import { CreateLoggingService } from "./service/LoggingService";
 import type { ILoggingService } from "./service/LoggingService";
-import { PrismaBetterSQLite3 } from "@prisma/adapter-better-sqlite3";
+//import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "./generated/prisma/client";
 import { CreatePrismaEventRepository } from "./repository/PrismaEventRepository";
 import { CreateEventService } from "./service/EventService";
@@ -20,18 +20,20 @@ import { CreateEventCommentsService } from "./service/EventCommentsService";
 import { CreateEventCommentsController } from "./controller/EventCommentsController";
 import { CreateAttendeeListService } from "./service/AttendeeListService";
 import { CreatePrismaSavedEventRepository } from "./repository/PrismaSavedEventRepository";
+import { CreateInMemoryUserRepository } from "./auth/InMemoryUserRepository";
 
 export function createComposedApp(logger?: ILoggingService): IApp {
   const resolvedLogger = logger ?? CreateLoggingService();
 
   // Repository wiring
-  const adapter = new PrismaBetterSQLite3({
-    url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
-  });
-  const prisma = new PrismaClient({ adapter });
+  // const adapter = new PrismaBetterSqlite3({
+  //   url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
+  // });
+  const prisma = new PrismaClient();
+  //const prisma = new PrismaClient({ adapter });
   const eventRepository = CreatePrismaEventRepository(prisma);
   const savedEventRepository = CreatePrismaSavedEventRepository(prisma);
-  const authUsers = CreatePrismaUserRepository(prisma);
+  const authUsers = CreateInMemoryUserRepository();
 
   // Authentication & authorization wiring
   const passwordHasher = CreatePasswordHasher();
