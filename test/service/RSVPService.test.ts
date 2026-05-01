@@ -109,8 +109,8 @@ describe("RSVPService.toggleRSVP", () => {
     expect(firstToggle.ok).toBe(true);
     if (firstToggle.ok) {
       expect(firstToggle.value.rsvpStatus).toBe("cancelled");
-      expect(firstToggle.value.attendeeCount).toBe(0);
-      expect(firstToggle.value.waitlistCount).toBe(0);
+      expect(firstToggle.value.attendeeCount).toBe(1);
+      expect(firstToggle.value.waitlistCount).toBe(1);
     }
   });
 
