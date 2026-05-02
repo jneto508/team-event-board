@@ -1,8 +1,21 @@
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
+import {
+  disconnectPrismaTestDb,
+  resetPrismaEventData,
+} from "../prismaTestUtils";
 
 describe("GET /events/archive", () => {
+  const mode = "prisma";
   type TestAgent = ReturnType<typeof request.agent>;
+
+  beforeEach(async () => {
+    await resetPrismaEventData();
+  });
+
+  afterAll(async () => {
+    await disconnectPrismaTestDb();
+  });
 
   async function login(
     agent: TestAgent,
@@ -15,7 +28,7 @@ describe("GET /events/archive", () => {
   }
 
   it("renders archived events for an authenticated user", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await login(agent, "user@app.test");
@@ -29,7 +42,7 @@ describe("GET /events/archive", () => {
   });
 
   it("filters archive results inline through HTMX", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await login(agent, "user@app.test");
@@ -48,14 +61,14 @@ describe("GET /events/archive", () => {
   });
 
   it("returns an empty-state partial when no archived events match the HTMX filter", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await login(agent, "user@app.test");
 
     const response = await agent
       .get("/events/archive")
-      .query({ category: "design" })
+      .query({ category: "sports" })
       .set("HX-Request", "true");
 
     expect(response.status).toBe(200);
