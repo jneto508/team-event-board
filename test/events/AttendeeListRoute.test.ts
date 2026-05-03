@@ -2,6 +2,10 @@
 
 import request from "supertest";
 import { createComposedApp } from "../../src/composition";
+import {
+  disconnectPrismaTestDb,
+  resetPrismaEventData,
+} from "../prismaTestUtils";
 
 async function loginAs(agent: request.Agent, email: string) {
   await agent.post("/login").type("form").send({
@@ -11,8 +15,18 @@ async function loginAs(agent: request.Agent, email: string) {
 }
 
 describe("Feature 12 - Attendee List Route", () => {
+  const mode = "prisma";
+
+  beforeEach(async () => {
+    await resetPrismaEventData();
+  });
+
+  afterAll(async () => {
+    await disconnectPrismaTestDb();
+  });
+
   it("allows the organizer to view the attendee list", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await loginAs(agent, "staff@app.test");
@@ -27,7 +41,7 @@ describe("Feature 12 - Attendee List Route", () => {
   });
 
   it("allows an admin to view the attendee list", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await loginAs(agent, "admin@app.test");
@@ -42,7 +56,7 @@ describe("Feature 12 - Attendee List Route", () => {
   });
 
   it("rejects an unauthorized member", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await loginAs(agent, "user@app.test");
@@ -56,7 +70,7 @@ describe("Feature 12 - Attendee List Route", () => {
   });
 
   it("renders the grouped attendee sections correctly", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await loginAs(agent, "staff@app.test");
@@ -74,7 +88,7 @@ describe("Feature 12 - Attendee List Route", () => {
   });
 
   it("sorts attendees by RSVP creation time within a group", async () => {
-    const app = createComposedApp().getExpressApp();
+    const app = createComposedApp(mode).getExpressApp();
     const agent = request.agent(app);
 
     await loginAs(agent, "staff@app.test");
